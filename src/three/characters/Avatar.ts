@@ -41,7 +41,13 @@ import {
   Vector3,
   Euler,
   MathUtils,
+  CanvasTexture,
+  SRGBColorSpace,
+  LinearFilter,
   MeshStandardMaterial,
+  MeshBasicMaterial,
+  PlaneGeometry,
+  DoubleSide,
   Bone,
   type IUniform,
 } from 'three'
@@ -50,6 +56,34 @@ import type { Avatar, AvatarPose, Loader } from '../contracts'
 
 const JERSEY_GLB_URL = '/models/character-jersey.glb'
 const SHIRT_GLB_URL = '/models/character-shirt.glb'
+
+// ─── CHIRAG 10 jersey-back texture ─────────────────────────────────────
+function makeChirag10Texture(): CanvasTexture {
+  const canvas = document.createElement('canvas')
+  canvas.width = 512
+  canvas.height = 320
+  const ctx = canvas.getContext('2d')!
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  ctx.fillStyle = '#0b1b3a'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+
+  // "CHIRAG" name across the top
+  ctx.font = 'bold 64px sans-serif'
+  ctx.fillText('CHIRAG', canvas.width / 2, 60)
+
+  // Giant "10" below
+  ctx.font = 'bold 220px sans-serif'
+  ctx.fillText('10', canvas.width / 2, 200)
+
+  const tex = new CanvasTexture(canvas)
+  tex.colorSpace = SRGBColorSpace
+  tex.magFilter = LinearFilter
+  tex.minFilter = LinearFilter
+  tex.generateMipmaps = false
+  return tex
+}
 
 // ─── Helper: find a child by name (case-insensitive substring) ────────────
 
@@ -225,6 +259,33 @@ export async function loadAvatar(
 
   root.add(jerseyModel)
   root.add(shirtModel)
+
+  // ── CHIRAG 10 jersey-back overlay ──────────────────────────────────────
+  // The Avaturn jersey export doesn't have a custom name+number painted
+  // on the back. We attach a thin plane with a generated CanvasTexture to
+  // the jersey model so it only shows when the jersey mesh is visible.
+  // Position is in jersey-model local space (model's back is -Z by
+  // default — local rotation π flips the plane normal to face -Z so the
+  // text reads when the avatar root is rotated π in hero state, which
+  // makes the plane's world normal +Z toward the camera).
+  const chiragTex = makeChirag10Texture()
+  const chiragPlane = new Mesh(
+    new PlaneGeometry(0.5, 0.32),
+    new MeshBasicMaterial({
+      map: chiragTex,
+      transparent: true,
+      side: DoubleSide,
+      depthWrite: false,
+      depthTest: false, // always render on top of body to avoid z-fighting
+    }),
+  )
+  // Chest height ≈ 1.4 m, 22 cm behind body centre (well outside the
+  // back surface ≈ 12 cm to avoid z-fighting + clipping during the
+  // bundled idle animation).
+  chiragPlane.position.set(0, 1.42, -0.22)
+  chiragPlane.rotation.y = Math.PI
+  chiragPlane.renderOrder = 999 // draw last so depthTest:false works cleanly
+  jerseyModel.add(chiragPlane)
 
   // ── Animation mixers (one per model — they share the same clip data so
   //    starting them together keeps them in sync).

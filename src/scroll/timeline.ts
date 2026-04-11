@@ -218,24 +218,15 @@ export function createTimeline(): MasterTimeline {
     const setHeroState = (): void => {
       room.root.visible = true
       avatar.root.visible = true
-      // "Sitting at desk" — without a Mixamo sit-typing clip we fake it
-      // by lowering the standing avatar to chair-seat height. Geometry:
-      //   - Floor:        y = 0
-      //   - Chair seat:   y ≈ 0.59 (chair pos 0 + seat top 0.59)
-      //   - Desk top:     y ≈ 1.03 (desk pos 0 + 1.0 + half of 0.06)
-      //   - Standing hips align with the avatar's local y ≈ 0.95
-      //   → Set avatar y = 0.59 - 0.95 = -0.36 to put hips at chair seat
-      //     (head ends up at y ≈ 1.49, just above the desk surface, where
-      //     a monitor/keyboard would be).
-      //   - z = 0: just in front of the chair (chair at z=0.2), facing
-      //     the desk (z=-0.8) which is 0.8 m forward of him.
-      //   - rotation.y = π so we see his back / over-shoulder shot.
-      // The legs poke down to y ≈ -0.36 and are hidden by the floor mesh.
-      // TODO(phase7-mixamo): replace with a real sit-typing clip once
-      // Mixamo retargeting is wired up.
-      avatar.root.position.set(0, -0.36, 0)
+      // Hero pose: standing in front of a whiteboard, back to the camera.
+      // The camera looks over his shoulder while he "studies the board".
+      //   - y = 0: feet on the floor, full standing height
+      //   - z = 0.6: in front of the whiteboard (mounted at z ≈ -1.4 on
+      //     the back wall) so there's ~2 m of board visible in front of him
+      //   - rotation.y = π: face the whiteboard (-Z direction)
+      avatar.root.position.set(0, 0, 0.6)
       avatar.root.rotation.set(0, Math.PI, 0)
-      avatar.play('sitting')
+      avatar.play('standing')
       hologram.root.visible = false
       mailroom.visible = false
     }

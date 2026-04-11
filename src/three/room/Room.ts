@@ -25,6 +25,9 @@ import {
   ConeGeometry,
   MeshStandardMaterial,
   MeshBasicMaterial,
+  CanvasTexture,
+  SRGBColorSpace,
+  LinearFilter,
   Vector2,
   DoubleSide,
   Object3D,
@@ -530,6 +533,150 @@ function buildSucculent(): Group {
   return group
 }
 
+// ─── Whiteboard (back wall) ─────────────────────────────────────────────
+// Phase 7C+: large whiteboard mounted on the back wall, used as the focal
+// point of the hero shot — the avatar stands in front of it with his back
+// to the camera. A CanvasTexture overlays a few hand-drawn sketches +
+// mock architecture diagrams so it reads as an actual working board, not
+// just a blank rectangle.
+function makeWhiteboardTexture(): CanvasTexture {
+  const canvas = document.createElement('canvas')
+  canvas.width = 1024
+  canvas.height = 720
+  const ctx = canvas.getContext('2d')!
+
+  // Off-white board surface
+  ctx.fillStyle = '#f4f3ee'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+  // Subtle marker streaks
+  ctx.fillStyle = 'rgba(180, 180, 180, 0.05)'
+  for (let i = 0; i < 30; i++) {
+    ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 60, 1)
+  }
+
+  // Heading
+  ctx.fillStyle = '#1c2552'
+  ctx.font = 'bold 56px sans-serif'
+  ctx.fillText('SYSTEM DESIGN', 60, 90)
+
+  // Underline
+  ctx.strokeStyle = '#1c2552'
+  ctx.lineWidth = 4
+  ctx.beginPath()
+  ctx.moveTo(60, 110)
+  ctx.lineTo(540, 110)
+  ctx.stroke()
+
+  // Architecture boxes
+  const drawBox = (x: number, y: number, w: number, h: number, label: string, color: string) => {
+    ctx.strokeStyle = color
+    ctx.lineWidth = 4
+    ctx.strokeRect(x, y, w, h)
+    ctx.fillStyle = color
+    ctx.font = 'bold 28px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(label, x + w / 2, y + h / 2)
+    ctx.textAlign = 'start'
+    ctx.textBaseline = 'alphabetic'
+  }
+
+  drawBox(80, 180, 220, 110, 'CLIENT', '#2563eb')
+  drawBox(400, 180, 220, 110, 'API', '#dc2626')
+  drawBox(720, 180, 220, 110, 'DB', '#16a34a')
+
+  // Arrows between boxes
+  ctx.strokeStyle = '#444'
+  ctx.lineWidth = 3
+  const drawArrow = (x1: number, y: number, x2: number) => {
+    ctx.beginPath()
+    ctx.moveTo(x1, y)
+    ctx.lineTo(x2, y)
+    ctx.stroke()
+    // Arrowhead
+    ctx.beginPath()
+    ctx.moveTo(x2, y)
+    ctx.lineTo(x2 - 12, y - 8)
+    ctx.lineTo(x2 - 12, y + 8)
+    ctx.closePath()
+    ctx.fillStyle = '#444'
+    ctx.fill()
+  }
+  drawArrow(300, 235, 400)
+  drawArrow(620, 235, 720)
+
+  // Notes underneath
+  ctx.fillStyle = '#333'
+  ctx.font = '24px sans-serif'
+  ctx.fillText('• caching layer (redis)', 80, 370)
+  ctx.fillText('• rate limit @ edge', 80, 410)
+  ctx.fillText('• circuit breaker → fallback', 80, 450)
+  ctx.fillText('• observability: traces + metrics', 80, 490)
+
+  // Right column — todo list
+  ctx.fillStyle = '#dc2626'
+  ctx.font = 'bold 32px sans-serif'
+  ctx.fillText('TODO', 600, 370)
+  ctx.fillStyle = '#333'
+  ctx.font = '24px sans-serif'
+  ctx.fillText('☐ schema migration', 600, 410)
+  ctx.fillText('☐ load test', 600, 450)
+  ctx.fillText('☐ deploy preview', 600, 490)
+  ctx.fillText('☑ doc update', 600, 530)
+
+  // Doodle — small circle/squiggle in the corner
+  ctx.strokeStyle = '#2563eb'
+  ctx.lineWidth = 3
+  ctx.beginPath()
+  ctx.arc(900, 600, 50, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(870, 600)
+  ctx.bezierCurveTo(880, 580, 920, 580, 930, 600)
+  ctx.stroke()
+
+  const tex = new CanvasTexture(canvas)
+  tex.colorSpace = SRGBColorSpace
+  tex.magFilter = LinearFilter
+  tex.minFilter = LinearFilter
+  tex.generateMipmaps = false
+  return tex
+}
+
+function buildWhiteboard(): Group {
+  const group = new Group()
+  const tex = makeWhiteboardTexture()
+
+  // Frame: dark border around the board
+  const frameGeo = new BoxGeometry(2.4, 1.7, 0.05)
+  const frameMat = std('#1a1a1a', 0.6)
+  const frame = shadowed(new Mesh(frameGeo, frameMat))
+  group.add(frame)
+
+  // Board surface: slightly inset, with the canvas texture
+  const boardGeo = new PlaneGeometry(2.3, 1.6)
+  const boardMat = new MeshStandardMaterial({
+    map: tex,
+    roughness: 0.85,
+    emissiveMap: tex,
+    emissive: '#ffffff',
+    emissiveIntensity: 0.08,
+  })
+  const board = new Mesh(boardGeo, boardMat)
+  board.position.z = 0.026
+  board.receiveShadow = true
+  group.add(board)
+
+  // Tray with markers along the bottom
+  const trayGeo = new BoxGeometry(2.2, 0.05, 0.12)
+  const tray = shadowed(new Mesh(trayGeo, std('#888888', 0.4, 0.6)))
+  tray.position.set(0, -0.92, 0.06)
+  group.add(tray)
+
+  return group
+}
+
 // ─── Corkboard + jersey pin ─────────────────────────────────────────────
 // PRIMITIVE: corkboard — see docs/asset-shortlist.md slot 14 for GLB swap-in
 function buildCorkboard(): Group {
@@ -657,9 +804,17 @@ export async function loadRoom(loader: Loader): Promise<Room> {
   succulent.position.set(-2.88, 2.0, -0.6)
   root.add(succulent)
 
-  // Corkboard — on the back wall, right of the window
+  // Whiteboard — large, centred on the back wall, the focal point of
+  // the hero shot. The avatar stands in front of it with his back to
+  // the camera.
+  const whiteboard = buildWhiteboard()
+  whiteboard.position.set(0, 1.7, -1.4)
+  root.add(whiteboard)
+
+  // Corkboard — moved to the upper-right of the back wall so it doesn't
+  // overlap the whiteboard.
   const corkboard = buildCorkboard()
-  corkboard.position.set(1.2, 2.6, -2.93)
+  corkboard.position.set(2.0, 2.4, -2.93)
   root.add(corkboard)
 
   const props: RoomProps = {
