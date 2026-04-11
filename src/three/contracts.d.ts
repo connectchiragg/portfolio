@@ -210,6 +210,12 @@ export interface MasterTimeline {
     avatar: Avatar
     hologram: Hologram
     lights: RoomLights
+    /**
+     * Mailroom Group — built by `buildMailroom()` in
+     * `src/three/room/Mailroom.ts`. The timeline parks it far back until the
+     * contact section reveals it. Added in Phase 4 by W8 (see phase log).
+     */
+    mailroom: Group
   }) => void
   /** Tears down all ScrollTriggers */
   dispose: () => void
