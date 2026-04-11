@@ -52,6 +52,12 @@ export function createScene(opts: SceneOptions): SceneContext {
   const startTime = performance.now()
   let lastTime = startTime
 
+  // Render override — Phase 5's postprocessing composer installs itself here
+  // via setRenderer so renderer.render() doesn't fight with composer.render().
+  let renderFn: (dt: number) => void = () => {
+    renderer.render(scene, camera)
+  }
+
   renderer.setAnimationLoop(() => {
     const now = performance.now()
     const dt = (now - lastTime) / 1000
@@ -62,8 +68,12 @@ export function createScene(opts: SceneOptions): SceneContext {
       cb(dt, elapsed)
     }
 
-    renderer.render(scene, camera)
+    renderFn(dt)
   })
+
+  const setRenderer = (fn: (dt: number) => void): void => {
+    renderFn = fn
+  }
 
   const resize = (): void => {
     const w = canvas.clientWidth
@@ -112,5 +122,6 @@ export function createScene(opts: SceneOptions): SceneContext {
     onTick,
     resize,
     dispose,
+    setRenderer,
   }
 }

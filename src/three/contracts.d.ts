@@ -32,6 +32,12 @@ export interface SceneContext {
   resize: () => void
   /** Fully tears down the renderer + disposes geometries/materials */
   dispose: () => void
+  /**
+   * Replaces the default `renderer.render(scene, camera)` call inside the
+   * animation loop. Used by the postprocessing composer to take over
+   * rendering. Pass a no-op `() => {}` to disable rendering entirely.
+   */
+  setRenderer: (fn: (dt: number) => void) => void
 }
 
 export interface SceneOptions {
