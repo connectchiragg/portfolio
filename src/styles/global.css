@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/*
+ * Theme tokens — ported from the Astro v1 portfolio (portfolio-astro-v1).
+ * Keep this file as the single source of truth for colours, fonts, and
+ * timing primitives. Components should reference these vars rather than
+ * hard-coding values.
+ */
+@theme {
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Cream / warm — hero, projects, contact, footer */
+  --color-cream: #fff5e9;
+  --color-cream-2: #ffe8cc;
+  --color-ink: #14110f;
+
+  /* Vibrant accents */
+  --color-grape: #6b2bd9;
+  --color-magenta: #ff2e93;
+  --color-tangerine: #ff7a1a;
+  --color-lemon: #ffd23f;
+  --color-mint: #2bd9a3;
+
+  /* Deep / hologram — about section */
+  --color-deep: #060a26;
+  --color-deep-2: #0d1240;
+  --color-cyan: #4ad8ff;
+
+  /* Argentina jersey colours (used by the avatar re-texture step) */
+  --color-arg-blue: #75aadb;
+  --color-arg-white: #ffffff;
+}
+
+html,
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+/* Persistent canvas — sits behind all HTML overlays */
+.three-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* HTML section overlays scroll on top of the canvas */
+main {
+  position: relative;
+  z-index: 10;
+}
