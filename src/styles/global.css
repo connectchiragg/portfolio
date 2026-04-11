@@ -34,7 +34,12 @@
 
 html,
 body {
-  background: var(--color-cream);
+  /*
+   * Body background must be transparent so the persistent 3D canvas
+   * (z-index: 0, position: fixed) shows through. Section components
+   * draw their own scoped backgrounds where needed for legibility.
+   */
+  background: transparent;
   color: var(--color-ink);
   font-family: var(--font-display);
   scroll-behavior: smooth;

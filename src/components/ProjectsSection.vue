@@ -3,7 +3,15 @@ import { projects } from '../data/projects'
 </script>
 
 <template>
-  <section id="projects" class="relative isolate overflow-hidden bg-cream py-32">
+  <!--
+    Section background is a soft cream wash so the project cards stay
+    readable while the 3D room scene behind still shows through subtly.
+  -->
+  <section
+    id="projects"
+    class="relative isolate overflow-hidden py-32"
+    style="background: linear-gradient(to bottom, rgba(255, 245, 233, 0.78) 0%, rgba(255, 245, 233, 0.85) 50%, rgba(255, 245, 233, 0.78) 100%);"
+  >
     <div
       class="absolute top-20 right-10 h-96 w-96 rounded-full bg-magenta opacity-50 blur-3xl"
       aria-hidden="true"

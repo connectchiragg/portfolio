@@ -37,7 +37,8 @@ const emailDisplay = emailHref.replace(/^mailto:/, '')
 <template>
   <section
     id="contact"
-    class="relative isolate overflow-hidden bg-cream-2 py-32"
+    class="relative isolate overflow-hidden py-32"
+    style="background: linear-gradient(to right, rgba(255, 232, 204, 0.92) 0%, rgba(255, 232, 204, 0.85) 35%, rgba(255, 232, 204, 0) 65%, rgba(255, 232, 204, 0) 100%);"
   >
     <div
       class="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-tangerine opacity-50 blur-3xl"
@@ -94,22 +95,11 @@ const emailDisplay = emailHref.replace(/^mailto:/, '')
           </a>
         </div>
 
-        <!-- placeholder for 3D scene / illustration -->
-        <div class="relative flex justify-center lg:justify-end">
-          <div
-            class="relative aspect-square w-full max-w-sm rounded-[2.5rem] bg-gradient-to-br from-grape via-magenta to-tangerine p-1 shadow-2xl shadow-magenta/30"
-          >
-            <div
-              class="relative grid h-full w-full place-items-center overflow-hidden rounded-[2.25rem] bg-cream text-center"
-            >
-              <p
-                class="px-6 font-mono text-sm font-bold uppercase tracking-widest text-ink/60"
-              >
-                3D mailroom<br />mounts here
-              </p>
-            </div>
-          </div>
-        </div>
+        <!--
+          Right column intentionally empty — the 3D mailroom on the
+          canvas peeks through this side of the section gradient.
+        -->
+        <div class="hidden lg:block" aria-hidden="true" />
       </div>
     </div>
   </section>

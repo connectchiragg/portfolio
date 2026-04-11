@@ -12,21 +12,24 @@ const nameParts = computed(() => {
 </script>
 
 <template>
+  <!--
+    The section is mostly transparent so the persistent 3D canvas shows
+    through. A horizontal gradient gives the LEFT half of the viewport a
+    soft cream wash for text legibility, fading to transparent on the
+    right where the 3D room scene lives.
+  -->
   <section
     id="top"
-    class="relative isolate min-h-screen overflow-hidden bg-cream pt-32 pb-20"
+    class="relative isolate min-h-screen overflow-hidden pt-32 pb-20"
+    style="background: linear-gradient(to right, rgba(255, 245, 233, 0.92) 0%, rgba(255, 245, 233, 0.85) 35%, rgba(255, 245, 233, 0) 65%, rgba(255, 245, 233, 0) 100%);"
   >
-    <!-- gradient blobs -->
+    <!-- subtle blob accents on the left side only -->
     <div
-      class="absolute top-10 -left-20 h-[420px] w-[420px] rounded-full bg-magenta opacity-50 blur-3xl"
+      class="absolute top-10 -left-20 h-[420px] w-[420px] rounded-full bg-magenta opacity-30 blur-3xl"
       aria-hidden="true"
     />
     <div
-      class="absolute top-40 right-0 h-[480px] w-[480px] rounded-full bg-grape opacity-40 blur-3xl"
-      aria-hidden="true"
-    />
-    <div
-      class="absolute bottom-0 left-1/3 h-[380px] w-[380px] rounded-full bg-lemon opacity-50 blur-3xl"
+      class="absolute bottom-0 left-1/4 h-[380px] w-[380px] rounded-full bg-lemon opacity-30 blur-3xl"
       aria-hidden="true"
     />
 
@@ -77,32 +80,12 @@ const nameParts = computed(() => {
         </div>
       </div>
 
-      <!-- placeholder for the 3D scene mount -->
-      <div class="relative z-10 flex justify-center lg:justify-end">
-        <div
-          class="relative aspect-square w-full max-w-md rotate-3 rounded-[2.5rem] bg-gradient-to-br from-tangerine via-magenta to-grape p-1 shadow-2xl shadow-grape/30"
-        >
-          <div
-            class="relative grid h-full w-full place-items-center overflow-hidden rounded-[2.25rem] bg-cream-2 text-center"
-          >
-            <p
-              class="px-6 font-mono text-sm font-bold uppercase tracking-widest text-ink/60"
-            >
-              3D scene<br />mounts here
-            </p>
-            <div
-              class="absolute left-4 top-4 -rotate-6 rounded-lg bg-white px-3 py-2 font-mono text-xs font-bold text-ink shadow-md ring-1 ring-black/10"
-            >
-              &lt;/&gt; coding
-            </div>
-            <div
-              class="absolute bottom-6 right-4 rotate-3 rounded-lg bg-mint px-3 py-2 font-mono text-xs font-bold text-ink shadow-md ring-1 ring-black/10"
-            >
-              shipping
-            </div>
-          </div>
-        </div>
-      </div>
+      <!--
+        Right column intentionally empty — the 3D room scene from
+        ThreeCanvas peeks through the transparent right side of the
+        section gradient and visually fills this space.
+      -->
+      <div class="hidden lg:block" aria-hidden="true" />
     </div>
 
     <!-- scroll cue -->
