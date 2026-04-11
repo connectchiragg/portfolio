@@ -93,6 +93,8 @@ export interface Avatar {
   lookAt: (worldX: number, worldY: number, worldZ: number) => void
   /** Re-textures the body to the Argentina #10 jersey (stripes + label) */
   applyJersey: () => void
+  /** Optional per-frame update — orchestrator wires this into sceneCtx.onTick */
+  tick?: (dt: number, elapsed: number) => void
   dispose: () => void
 }
 
@@ -107,6 +109,8 @@ export interface Hologram {
   bindAnalyser: (analyser: AnalyserNode) => void
   /** 0..1 reveal (hidden → fully on) — driven by the GSAP timeline */
   setReveal: (v: number) => void
+  /** Optional per-frame update — orchestrator wires this into sceneCtx.onTick */
+  tick?: (dt: number, elapsed: number) => void
   dispose: () => void
 }
 
@@ -135,6 +139,8 @@ export interface Room {
   props: RoomProps
   /** Returns a named clickable hit-mesh by prop name (for easter eggs) */
   getHitMesh: (name: keyof RoomProps) => Object3D | null
+  /** Optional per-frame update — orchestrator wires this into sceneCtx.onTick */
+  tick?: (dt: number, elapsed: number) => void
   dispose: () => void
 }
 

@@ -289,6 +289,10 @@ export function loadAvatar(loader: Loader, glbUrl: string): Promise<Avatar> {
   root.add(rightLeg)
 
   // ── Pose state + play() ────────────────────────────────────────────────
+  // Declared up here so applyJointState (called below) doesn't hit a TDZ
+  // when running for the first time before lookAt() has been called.
+  let headTrackingActive = false
+
   const jointState: JointTargets = { ...POSES.standing }
   // apply initial pose
   const applyJointState = (): void => {
@@ -330,7 +334,7 @@ export function loadAvatar(loader: Loader, glbUrl: string): Promise<Avatar> {
   }
 
   // ── Head tracking (lookAt) ─────────────────────────────────────────────
-  let headTrackingActive = false
+  // headTrackingActive is declared above to avoid the TDZ on first apply.
   const headTarget = new Vector3()
   const headWorldPos = new Vector3()
   const tmpEuler = new Euler()
