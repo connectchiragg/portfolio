@@ -215,6 +215,11 @@ export function createTimeline(): MasterTimeline {
     // state functions below MUST NOT call hologram.setReveal — that would
     // fight the scrubbed tween every frame.
 
+    // Cast once for the optional setShowContact extension on Avatar.
+    const avatarExt = avatar as Avatar & {
+      setShowContact?: (on: boolean) => void
+    }
+
     const setHeroState = (): void => {
       room.root.visible = true
       avatar.root.visible = true
@@ -227,6 +232,7 @@ export function createTimeline(): MasterTimeline {
       avatar.root.position.set(0, 0, 0.6)
       avatar.root.rotation.set(0, Math.PI, 0)
       avatar.play('standing')
+      avatarExt.setShowContact?.(false)
       hologram.root.visible = false
       mailroom.visible = false
     }
@@ -247,6 +253,7 @@ export function createTimeline(): MasterTimeline {
       // Face the camera for the wardrobe-reveal close-up.
       avatar.root.rotation.set(0, Math.PI, 0)
       avatar.play('standing')
+      avatarExt.setShowContact?.(false)
       hologram.root.visible = true
       mailroom.visible = false
     }
@@ -257,10 +264,8 @@ export function createTimeline(): MasterTimeline {
       // projects section, so an avatar parked at the desk reads as a
       // tiny silhouette peeking between cards (worse than not being
       // there at all). Hide him for projects — the cards are the star.
-      // TODO(phase7-projects-pose): if/when we want him back, position
-      // him off to the side or much further back so he doesn't collide
-      // with the cards' z-order.
       avatar.root.visible = false
+      avatarExt.setShowContact?.(false)
       hologram.root.visible = false
       mailroom.visible = false
     }
@@ -269,13 +274,12 @@ export function createTimeline(): MasterTimeline {
       room.root.visible = false
       avatar.root.visible = true
       avatar.root.position.set(0, 0, 16)
-      // TODO(phase7-contact-pose): the user is going to export a dedicated
-      // contact-section pose from Avaturn (probably arms-crossed standing
-      // beside the cardboard packages). When the new GLB lands, swap to it
-      // here and update the rotation to whatever lines up with the camera
-      // angle in CONTACT_STOP.
       avatar.root.rotation.set(0, 0, 0)
       avatar.play('standing')
+      // Snap-swap to the contact-only jersey mesh (different pose from
+      // the wardrobe-reveal jersey). The scan duo is hidden while this
+      // is active.
+      avatarExt.setShowContact?.(true)
       hologram.root.visible = false
       mailroom.visible = true
     }

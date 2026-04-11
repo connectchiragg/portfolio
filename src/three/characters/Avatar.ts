@@ -54,28 +54,35 @@ import {
 import type { BufferGeometry, Material } from 'three'
 import type { Avatar, AvatarPose, Loader } from '../contracts'
 
-const JERSEY_GLB_URL = '/models/character-jersey.glb'
+// Three outfits used across the four sections of the scroll story:
+//   hero      → jersey + thinking pose (the "studying the whiteboard" stance)
+//   about     → white shirt (revealed via the wardrobe-reveal scan)
+//   projects  → white shirt (continues from about)
+//   contact   → jersey + standing pose (snap-swap, not scanned)
+const JERSEY_THINKING_GLB_URL = '/models/character-jersey-thinking.glb'
 const SHIRT_GLB_URL = '/models/character-shirt.glb'
+const JERSEY_GLB_URL = '/models/character-jersey.glb'
 
 // ─── CHIRAG 10 jersey-back texture ─────────────────────────────────────
 function makeChirag10Texture(): CanvasTexture {
   const canvas = document.createElement('canvas')
   canvas.width = 512
-  canvas.height = 320
+  canvas.height = 384
   const ctx = canvas.getContext('2d')!
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+  // Tight, centered "CHIRAG" name + "10" number, slightly smaller than v1
+  // so it sits naturally between the shoulder blades instead of looking
+  // like a giant decal slapped on the back.
   ctx.fillStyle = '#0b1b3a'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
-  // "CHIRAG" name across the top
-  ctx.font = 'bold 64px sans-serif'
-  ctx.fillText('CHIRAG', canvas.width / 2, 60)
+  ctx.font = 'bold 56px sans-serif'
+  ctx.fillText('CHIRAG', canvas.width / 2, 80)
 
-  // Giant "10" below
-  ctx.font = 'bold 220px sans-serif'
-  ctx.fillText('10', canvas.width / 2, 200)
+  ctx.font = 'bold 200px sans-serif'
+  ctx.fillText('10', canvas.width / 2, 240)
 
   const tex = new CanvasTexture(canvas)
   tex.colorSpace = SRGBColorSpace
@@ -83,6 +90,54 @@ function makeChirag10Texture(): CanvasTexture {
   tex.minFilter = LinearFilter
   tex.generateMipmaps = false
   return tex
+}
+
+/**
+ * Builds a Mesh that wears the CHIRAG 10 print on the back of a jersey
+ * mesh. Sized small (0.26 x 0.20 m) and meant to be parented to the
+ * `Spine2` chest bone via `pinChirag10ToChestBone(model)` so it deforms
+ * with the bundled animation instead of staying at the static root.
+ */
+function makeChirag10Plane(): Mesh {
+  const tex = makeChirag10Texture()
+  const plane = new Mesh(
+    new PlaneGeometry(0.26, 0.2),
+    new MeshBasicMaterial({
+      map: tex,
+      transparent: true,
+      side: DoubleSide,
+      depthWrite: false,
+      depthTest: false,
+    }),
+  )
+  plane.renderOrder = 999
+  return plane
+}
+
+/**
+ * Finds the `Spine2` chest bone in the rig and parents a CHIRAG 10
+ * plane to it. The plane sits ~14 cm "behind" the bone in its local
+ * space and faces the bone's local -Z. When the bundled animation
+ * rotates/translates Spine2 (the avatar leans, twists, breathes), the
+ * plane follows in lock-step — exactly what "pin to back" means.
+ */
+function pinChirag10ToChestBone(model: Object3D): Mesh | null {
+  const spine2 = findByName(model, 'Spine2') as Bone | null
+  if (!spine2) {
+    console.warn('[Avatar] Spine2 bone not found — chirag plane skipped')
+    return null
+  }
+  const plane = makeChirag10Plane()
+  // In the Mixamo/Avaturn rig, Spine2's local axes are: +Y along the
+  // spine (toward the head), +Z forward (body's front), -Z back. The
+  // chest centre is roughly at the bone origin; the back surface is
+  // ~12 cm in -Z. We position a bit further out (-0.14) to clear the
+  // body in deformed poses.
+  plane.position.set(0, 0.05, -0.14)
+  // Rotate so the plane's local normal points toward -Z (the back).
+  plane.rotation.y = Math.PI
+  spine2.add(plane)
+  return plane
 }
 
 // ─── Helper: find a child by name (case-insensitive substring) ────────────
@@ -243,67 +298,72 @@ export async function loadAvatar(
   const root = new Group()
   root.name = 'Avatar'
 
-  const [jerseyGltf, shirtGltf] = await Promise.all([
-    loader.load(JERSEY_GLB_URL),
+  const [thinkingGltf, shirtGltf, jerseyGltf] = await Promise.all([
+    loader.load(JERSEY_THINKING_GLB_URL),
     loader.load(SHIRT_GLB_URL),
+    loader.load(JERSEY_GLB_URL),
   ])
-  const jerseyModel = jerseyGltf.scene
-  const shirtModel = shirtGltf.scene
+  const thinkingModel = thinkingGltf.scene // hero (jersey + thinking pose)
+  const shirtModel = shirtGltf.scene // about + projects (white shirt)
+  const jerseyModel = jerseyGltf.scene // contact (jersey + standing pose)
 
   // Single shared uniforms object — drives the scan effect on every body
-  // material across both outfits in lock-step.
+  // material across the wardrobe-reveal duo (thinking ↔ shirt).
   const uniforms = makeSharedUniforms()
 
-  prepareModel(jerseyModel, uniforms, false) // jersey = default (v=0)
-  prepareModel(shirtModel, uniforms, true) // shirt = alternate (v=1)
+  // Wardrobe-reveal duo: thinking is the default (v=0), shirt is the
+  // alternate (v=1). The contact jersey is a third static mesh outside
+  // the scan — it just snap-swaps in for the contact section.
+  prepareModel(thinkingModel, uniforms, false)
+  prepareModel(shirtModel, uniforms, true)
 
-  root.add(jerseyModel)
+  // Contact jersey: shadows + scene parenting only, no shader injection.
+  jerseyModel.traverse((obj) => {
+    const mesh = obj as Mesh
+    if ((mesh as unknown as { isMesh?: boolean }).isMesh) {
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+    }
+  })
+
+  root.add(thinkingModel)
   root.add(shirtModel)
+  root.add(jerseyModel)
 
-  // ── CHIRAG 10 jersey-back overlay ──────────────────────────────────────
+  // ── CHIRAG 10 jersey-back overlays (hero + contact) ────────────────────
   // The Avaturn jersey export doesn't have a custom name+number painted
-  // on the back. We attach a thin plane with a generated CanvasTexture to
-  // the jersey model so it only shows when the jersey mesh is visible.
-  // Position is in jersey-model local space (model's back is -Z by
-  // default — local rotation π flips the plane normal to face -Z so the
-  // text reads when the avatar root is rotated π in hero state, which
-  // makes the plane's world normal +Z toward the camera).
-  const chiragTex = makeChirag10Texture()
-  const chiragPlane = new Mesh(
-    new PlaneGeometry(0.5, 0.32),
-    new MeshBasicMaterial({
-      map: chiragTex,
-      transparent: true,
-      side: DoubleSide,
-      depthWrite: false,
-      depthTest: false, // always render on top of body to avoid z-fighting
-    }),
-  )
-  // Chest height ≈ 1.4 m, 22 cm behind body centre (well outside the
-  // back surface ≈ 12 cm to avoid z-fighting + clipping during the
-  // bundled idle animation).
-  chiragPlane.position.set(0, 1.42, -0.22)
-  chiragPlane.rotation.y = Math.PI
-  chiragPlane.renderOrder = 999 // draw last so depthTest:false works cleanly
-  jerseyModel.add(chiragPlane)
+  // on the back. We attach a thin plane to the `Spine2` chest bone of
+  // each jersey mesh so it deforms with the bundled animation (the
+  // thinking pose's chest leans + twists). The shirt mesh doesn't get
+  // one — the white shirt has no jersey number.
+  pinChirag10ToChestBone(thinkingModel)
+  pinChirag10ToChestBone(jerseyModel)
 
-  // ── Animation mixers (one per model — they share the same clip data so
-  //    starting them together keeps them in sync).
-  const jerseyMixer = new AnimationMixer(jerseyModel)
+  // ── Animation mixers (one per model). Each plays the bundled
+  //    avaturn_animation clip baked into its own GLB. The thinking pose
+  //    has a different clip than the standing jersey, so they animate
+  //    independently — but the wardrobe-reveal duo (thinking ↔ shirt)
+  //    relies on near-stationary poses so the visible difference between
+  //    the two during the scan is minimal.
+  const thinkingMixer = new AnimationMixer(thinkingModel)
   const shirtMixer = new AnimationMixer(shirtModel)
+  const jerseyMixer = new AnimationMixer(jerseyModel)
 
   let activeClip: AnimationClip | null = null
-  if (jerseyGltf.animations.length > 0) {
-    activeClip = jerseyGltf.animations[0]
-    jerseyMixer.clipAction(activeClip).play()
+  if (thinkingGltf.animations.length > 0) {
+    activeClip = thinkingGltf.animations[0]
+    thinkingMixer.clipAction(activeClip).play()
   }
   if (shirtGltf.animations.length > 0) {
     shirtMixer.clipAction(shirtGltf.animations[0]).play()
   }
+  if (jerseyGltf.animations.length > 0) {
+    jerseyMixer.clipAction(jerseyGltf.animations[0]).play()
+  }
 
-  // ── Find the head bone (use the jersey mesh; bones are equivalent on
-  //    both rigs since they share the same skeleton).
-  const headBone = (findByName(jerseyModel, 'head') ?? null) as Bone | null
+  // ── Find the head bone (use the thinking mesh; bones are equivalent
+  //    on all three rigs since they share the same skeleton).
+  const headBone = (findByName(thinkingModel, 'head') ?? null) as Bone | null
 
   // ── Pose state (no-op for now; bundled clip is the only motion source) ─
   let currentPose: AvatarPose = 'standing'
@@ -341,35 +401,58 @@ export async function loadAvatar(
     /* GLB-baked, nothing to do */
   }
 
-  // ── Wardrobe-reveal scan driver ────────────────────────────────────────
-  // v=0 → jersey visible, shirt mesh hidden entirely (no overdraw)
-  // v=1 → shirt visible, jersey mesh hidden entirely
-  // 0<v<1 → both meshes visible, scan line in progress, shader discards
-  //         the hidden half on a per-fragment basis
+  // ── Wardrobe-reveal + contact-swap drivers ─────────────────────────────
+  // The scan operates on the duo (thinking ↔ shirt). When the contact
+  // section is active, those two are hidden and the static contact jersey
+  // takes over via setShowContact(true).
+  //
+  //   v=0       → thinking visible, shirt hidden            (hero)
+  //   v=1       → shirt visible, thinking hidden            (about / projects)
+  //   0 < v < 1 → both visible, scan band glowing in between
+  //   contact   → contact jersey visible, scan duo hidden   (contact)
   const SCAN_TOP = 2.0 // ~head height + a margin
   const SCAN_BOTTOM = -0.05 // just under the feet
+  let isContactSwap = false
+
   const setScanReveal = (v: number): void => {
     const clamped = MathUtils.clamp(v, 0, 1)
     uniforms.uScanReveal.value = clamped
     uniforms.uScanY.value = MathUtils.lerp(SCAN_TOP, SCAN_BOTTOM, clamped)
+    if (isContactSwap) return // contact jersey takes over, scan is paused
     if (clamped <= 0.001) {
-      jerseyModel.visible = true
+      thinkingModel.visible = true
       shirtModel.visible = false
     } else if (clamped >= 0.999) {
-      jerseyModel.visible = false
+      thinkingModel.visible = false
       shirtModel.visible = true
     } else {
-      jerseyModel.visible = true
+      thinkingModel.visible = true
       shirtModel.visible = true
     }
   }
-  // Default state: pure jersey (matches hero)
+
+  const setShowContact = (on: boolean): void => {
+    isContactSwap = on
+    if (on) {
+      thinkingModel.visible = false
+      shirtModel.visible = false
+      jerseyModel.visible = true
+    } else {
+      jerseyModel.visible = false
+      // Re-apply current scan state so the right scan-duo mesh comes back
+      setScanReveal(uniforms.uScanReveal.value)
+    }
+  }
+
+  // Default state: hero (thinking pose), contact swap off
+  jerseyModel.visible = false
   setScanReveal(0)
 
-  // ── Tick: advance both mixers + the time uniform ──────────────────────
+  // ── Tick: advance all three mixers + the time uniform ─────────────────
   const tick = (dt: number, elapsed: number): void => {
-    jerseyMixer.update(dt)
+    thinkingMixer.update(dt)
     shirtMixer.update(dt)
+    jerseyMixer.update(dt)
     uniforms.uTime.value = elapsed
 
     if (!headTrackingActive && headBone) {
@@ -379,8 +462,9 @@ export async function loadAvatar(
 
   // ── Dispose ────────────────────────────────────────────────────────────
   const dispose = (): void => {
-    jerseyMixer.stopAllAction()
+    thinkingMixer.stopAllAction()
     shirtMixer.stopAllAction()
+    jerseyMixer.stopAllAction()
     root.traverse((obj: Object3D) => {
       const mesh = obj as Mesh
       const geometry = mesh.geometry as BufferGeometry | undefined
@@ -399,16 +483,17 @@ export async function loadAvatar(
   }
 
   // The orchestrator wires this through the unified Avatar contract.
-  // mixer field on the contract: hand back the jersey mixer (the shirt
-  // one is in lock-step so any external code that pokes at the mixer
-  // can use this one as the canonical reference).
+  // mixer field on the contract: hand back the thinking mixer (the
+  // canonical reference for the hero pose; orchestrator code that pokes
+  // at the mixer can use this one).
   return {
     root,
-    mixer: jerseyMixer,
+    mixer: thinkingMixer,
     play,
     lookAt,
     applyJersey,
     setScanReveal,
+    setShowContact,
     dispose,
     tick,
   }

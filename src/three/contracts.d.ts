@@ -101,12 +101,16 @@ export interface Avatar {
   applyJersey: () => void
   /**
    * Drives the wardrobe-reveal hologram scan effect.
-   * 0 = pure t-shirt (default state in hero/projects/contact)
-   * 1 = pure Argentina jersey
-   * 0..1 = scan in progress; the scan threshold animates from above-head down
-   *        to below-feet and a bright cyan band glows at the threshold
+   * 0 = pure default outfit, 1 = pure alternate, 0..1 = scan in progress
+   * with a bright cyan band glowing at the scan threshold.
    */
   setScanReveal?: (v: number) => void
+  /**
+   * Snap-swap the avatar's body to the contact-only jersey mesh
+   * (different pose than the wardrobe-reveal jersey). Hides the scan
+   * duo entirely while on. Used by the contact-section state.
+   */
+  setShowContact?: (on: boolean) => void
   /** Optional per-frame update — orchestrator wires this into sceneCtx.onTick */
   tick?: (dt: number, elapsed: number) => void
   dispose: () => void
