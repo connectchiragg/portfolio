@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
-    "postinstall": "node scripts/copy-decoders.mjs"
+    "postinstall": "node scripts/copy-decoders.mjs",
+    "optimise:models": "node scripts/optimise-models.mjs"
   },
   "dependencies": {
     "@vueuse/core": "^14.2.1",
@@ -21,6 +22,10 @@
     "vue": "^3.5.32"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "^4.3.0",
+    "@gltf-transform/core": "^4.3.0",
+    "@gltf-transform/extensions": "^4.3.0",
+    "@gltf-transform/functions": "^4.3.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^24.12.2",
     "@types/three": "^0.183.1",

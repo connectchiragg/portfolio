@@ -16,6 +16,9 @@ dist-ssr
 public/draco/
 public/basis/
 
+# Claude Code agent worktrees + scratch
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
