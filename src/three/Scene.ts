@@ -11,7 +11,7 @@ import {
   PerspectiveCamera,
   ACESFilmicToneMapping,
   SRGBColorSpace,
-  PCFSoftShadowMap,
+  PCFShadowMap,
   Mesh,
 } from 'three'
 import type { Material, BufferGeometry } from 'three'
@@ -31,7 +31,7 @@ export function createScene(opts: SceneOptions): SceneContext {
   renderer.toneMapping = ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.0
   renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = PCFSoftShadowMap
+  renderer.shadowMap.type = PCFShadowMap
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatio ?? 2))
 
   const scene = new Scene()
