@@ -85,17 +85,19 @@ export function buildHeroToAbout(
     at,
   )
 
-  // Hologram reveal 0 → 1 over the back half of the transition
+  // Phase 7C+: hologram reveal 0 → 1 spans the full hero→about segment
+  // with a smooth power3.inOut ease so the wardrobe scan feels gradual on
+  // both ends instead of snapping at the start.
   const reveal = { v: 0 }
   tl.to(
     reveal,
     {
       v: 1,
-      ease: 'power2.out',
-      duration: duration * 0.75,
+      ease: 'power3.inOut',
+      duration,
       onUpdate: () => hologram.setReveal(reveal.v),
     },
-    at + duration * 0.25,
+    at,
   )
 
   // Visibility toggles are handled in the per-section ScrollTriggers in

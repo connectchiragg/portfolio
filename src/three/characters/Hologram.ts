@@ -30,7 +30,6 @@ import {
   BufferGeometry,
   Float32BufferAttribute,
   ShaderMaterial,
-  type Material,
 } from 'three'
 
 import type { Avatar, Hologram } from '../contracts'
@@ -89,30 +88,22 @@ function buildGridPoints(): Points {
 
 export function createHologram(avatar: Avatar): HologramTickable {
   const root = new Group()
-  root.name = 'Hologram'
+  root.name = 'HologramFx'
 
-  // Base shader material — individual meshes get clones so each can have its
-  // own uniform values even though they share the compiled program.
+  // Phase 7C+: the body material swap is gone. The wardrobe-reveal lives
+  // inside the Avatar itself (Avatar.ts injects onBeforeCompile chunks into
+  // both the t-shirt and the jersey body materials). All Hologram does now
+  // is forward setReveal(v) → avatar.setScanReveal(v) and animate the
+  // platform + grid + counter readout in lock-step.
+
   const baseMaterial = createHologramMaterial()
   const clonedMaterials: ShaderMaterial[] = []
-  const originalMaterials = new Map<Mesh, Material | Material[]>()
-
-  avatar.root.traverse((obj) => {
-    const mesh = obj as Mesh
-    if ((mesh as unknown as { isMesh?: boolean }).isMesh) {
-      originalMaterials.set(mesh, mesh.material)
-      const cloned = baseMaterial.clone()
-      clonedMaterials.push(cloned)
-      mesh.material = cloned
-    }
-  })
-
-  root.add(avatar.root)
 
   // Glowing platform pad under the figure.
   const platformGeo = new CylinderGeometry(0.6, 0.6, 0.05, 32)
   const platformMat = baseMaterial.clone()
-  clonedMaterials.push(platformMat)
+  // Tracked separately from clonedMaterials so restoreMaterials() doesn't
+  // dispose the platform when the body materials swap back.
   const platform = new Mesh(platformGeo, platformMat)
   platform.name = 'HologramPlatform'
   platform.position.y = 0.025
@@ -128,12 +119,18 @@ export function createHologram(avatar: Avatar): HologramTickable {
   let audioBuffer: Uint8Array<ArrayBuffer> | null = null
 
   // ── Public API ────────────────────────────────────────────────────────
+  const avatarWithScan = avatar as Avatar & {
+    setScanReveal?: (v: number) => void
+  }
   const setReveal = (v: number) => {
     const clamped = Math.max(0, Math.min(1, v))
+    // Drive the wardrobe-reveal scan inside the Avatar.
+    avatarWithScan.setScanReveal?.(clamped)
+    // Animate the platform glow + grid alpha alongside the body scan.
+    platformMat.uniforms.uReveal.value = clamped
     for (const mat of clonedMaterials) {
       mat.uniforms.uReveal.value = clamped
     }
-    // Fade the dotted grid alongside the shader materials.
     const gridMat = grid.material as PointsMaterial
     gridMat.opacity = 0.9 * clamped
   }
@@ -144,10 +141,11 @@ export function createHologram(avatar: Avatar): HologramTickable {
   }
 
   const tick = (_dt: number, elapsed: number) => {
-    // Advance time uniform on every cloned material.
+    // Advance time uniform on every cloned material (body + platform).
     for (const mat of clonedMaterials) {
       mat.uniforms.uTime.value = elapsed
     }
+    platformMat.uniforms.uTime.value = elapsed
 
     // Poll analyser for bass amplitude if bound and producing data.
     if (analyser && audioBuffer) {
@@ -168,22 +166,15 @@ export function createHologram(avatar: Avatar): HologramTickable {
         for (const mat of clonedMaterials) {
           mat.uniforms.uAudioLevel.value = level
         }
+        platformMat.uniforms.uAudioLevel.value = level
       }
     }
   }
 
   const dispose = () => {
-    // Restore original avatar materials.
-    for (const [mesh, original] of originalMaterials) {
-      mesh.material = original
-    }
-    originalMaterials.clear()
-
-    // Dispose every cloned shader material (including the platform's).
-    for (const mat of clonedMaterials) {
-      mat.dispose()
-    }
-    clonedMaterials.length = 0
+    // Phase 7C+: body materials live on the Avatar now; nothing for the
+    // hologram to restore. Just dispose the platform + grid + analyser.
+    platformMat.dispose()
 
     // Dispose base material + program slot.
     baseMaterial.dispose()
@@ -195,9 +186,6 @@ export function createHologram(avatar: Avatar): HologramTickable {
     root.remove(grid)
     grid.geometry.dispose()
     ;(grid.material as PointsMaterial).dispose()
-
-    // Detach the avatar root so the owning module can still dispose it.
-    root.remove(avatar.root)
 
     analyser = null
     audioBuffer = null

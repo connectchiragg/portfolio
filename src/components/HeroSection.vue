@@ -21,18 +21,8 @@ const nameParts = computed(() => {
   <section
     id="top"
     class="relative isolate min-h-screen overflow-hidden pt-32 pb-20"
-    style="background: linear-gradient(to right, rgba(255, 245, 233, 0.92) 0%, rgba(255, 245, 233, 0.85) 35%, rgba(255, 245, 233, 0) 65%, rgba(255, 245, 233, 0) 100%);"
+    style="background: linear-gradient(to right, rgba(255, 245, 233, 0.85) 0%, rgba(255, 245, 233, 0.7) 30%, rgba(255, 245, 233, 0) 60%, rgba(255, 245, 233, 0) 100%);"
   >
-    <!-- subtle blob accents on the left side only -->
-    <div
-      class="absolute top-10 -left-20 h-[420px] w-[420px] rounded-full bg-magenta opacity-30 blur-3xl"
-      aria-hidden="true"
-    />
-    <div
-      class="absolute bottom-0 left-1/4 h-[380px] w-[380px] rounded-full bg-lemon opacity-30 blur-3xl"
-      aria-hidden="true"
-    />
-
     <div
       class="relative mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-2"
     >

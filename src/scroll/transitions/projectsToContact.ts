@@ -13,7 +13,7 @@
 import type gsap from 'gsap'
 import { Color } from 'three'
 import type { PerspectiveCamera, Scene, Group } from 'three'
-import type { Room, RoomLights } from '../../three/contracts'
+import type { Room, RoomLights, Hologram } from '../../three/contracts'
 import type { CameraStop } from './heroToAbout'
 
 type Timeline = ReturnType<typeof gsap.timeline>
@@ -24,6 +24,7 @@ export interface ProjectsToContactDeps {
   room: Room
   mailroom: Group
   lights: RoomLights
+  hologram: Hologram
   lookAt: { x: number; y: number; z: number }
 }
 
@@ -35,7 +36,7 @@ export function buildProjectsToContact(
   at: number,
   duration: number,
 ): void {
-  const { camera, scene, room, mailroom, lights, lookAt } = deps
+  const { camera, scene, room, mailroom, lights, hologram, lookAt } = deps
 
   tl.fromTo(
     camera.position,
@@ -86,6 +87,21 @@ export function buildProjectsToContact(
       ease: 'power1.inOut',
       duration,
       onUpdate: () => lights.setTimeOfDay(tod.v),
+    },
+    at,
+  )
+
+  // Phase 7C+: wardrobe reveal flips back from shirt (v=1) → jersey (v=0)
+  // as the camera flies into the mailroom. Smooth power3.inOut ease over
+  // the full segment matches the heroToAbout reveal feel.
+  const reveal = { v: 1 }
+  tl.to(
+    reveal,
+    {
+      v: 0,
+      ease: 'power3.inOut',
+      duration,
+      onUpdate: () => hologram.setReveal(reveal.v),
     },
     at,
   )

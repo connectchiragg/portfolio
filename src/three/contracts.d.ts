@@ -99,6 +99,14 @@ export interface Avatar {
   lookAt: (worldX: number, worldY: number, worldZ: number) => void
   /** Re-textures the body to the Argentina #10 jersey (stripes + label) */
   applyJersey: () => void
+  /**
+   * Drives the wardrobe-reveal hologram scan effect.
+   * 0 = pure t-shirt (default state in hero/projects/contact)
+   * 1 = pure Argentina jersey
+   * 0..1 = scan in progress; the scan threshold animates from above-head down
+   *        to below-feet and a bright cyan band glows at the threshold
+   */
+  setScanReveal?: (v: number) => void
   /** Optional per-frame update — orchestrator wires this into sceneCtx.onTick */
   tick?: (dt: number, elapsed: number) => void
   dispose: () => void

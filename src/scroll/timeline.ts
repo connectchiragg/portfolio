@@ -109,23 +109,24 @@ export function createTimeline(): MasterTimeline {
     masterTl = tl
     if (tl.scrollTrigger) triggers.push(tl.scrollTrigger)
 
-    // Segment durations (on the unit timeline). These are tuned to match the
-    // actual HTML section heights so the 3D camera moves stay aligned with
-    // the section the user is reading. Approximate fractions of total scroll:
-    //   hero    ~25% (0.00 → 0.20)
-    //   about   ~24% (0.20 → 0.40)
-    //   projects ~51% (0.40 → 0.85)  ← biggest section, 4 project cards
-    //   contact  ~5%  (0.85 → 0.96)
-    //   footer   ~4%  (0.96 → 1.00)
-    // The hero stop holds for the first 0–0.20 of the timeline by starting
-    // the heroToAbout transition only at progress 0.05 (so hero idles briefly
-    // before the camera starts moving).
-    const T_HERO_HOLD = 0.05
-    const T_HERO_ABOUT = 0.15
-    const T_ABOUT_HOLD = 0.05
-    const T_ABOUT_PROJECTS = 0.15
-    const T_PROJECTS_HOLD = 0.30
-    const T_PROJECTS_CONTACT = 0.15
+    // Segment durations (on the unit timeline). Tuned so the wardrobe-reveal
+    // peak (reveal=1) lands inside the visible #about + #projects sections,
+    // and only flips back to jersey (reveal=0) once the camera has begun
+    // flying to the mailroom. Approximate fractions of total scroll:
+    //   hero hold  0.00 → 0.10
+    //   hero→about 0.10 → 0.22  (reveal climbs 0 → 1 over the back 75%)
+    //   about hold 0.22 → 0.40  (reveal stays at 1 — shirt visible)
+    //   about→proj 0.40 → 0.45  (camera move only, reveal still 1)
+    //   proj hold  0.45 → 0.78  (reveal stays at 1, biggest section)
+    //   proj→cont  0.78 → 0.92  (reveal flips 1 → 0 over the front 70%)
+    //   cont hold  0.92 → 0.96
+    //   cont→foot  0.96 → 1.00
+    const T_HERO_HOLD = 0.10
+    const T_HERO_ABOUT = 0.12
+    const T_ABOUT_HOLD = 0.18
+    const T_ABOUT_PROJECTS = 0.05
+    const T_PROJECTS_HOLD = 0.33
+    const T_PROJECTS_CONTACT = 0.14
     const T_CONTACT_HOLD = 0.04
     const T_CONTACT_FOOTER = 0.04
 
@@ -158,7 +159,7 @@ export function createTimeline(): MasterTimeline {
       tl,
       PROJECTS_STOP,
       CONTACT_STOP,
-      { camera, scene, room, mailroom, lights, lookAt },
+      { camera, scene, room, mailroom, lights, hologram, lookAt },
       projectsContactAt,
       T_PROJECTS_CONTACT,
     )
@@ -206,27 +207,69 @@ export function createTimeline(): MasterTimeline {
     //   #contact  → room hidden,  avatar standing in mailroom,
     //               hologram hidden, mailroom visible
 
+    // Phase 7C+: a single Avatar instance is teleported between the chair
+    // (hero), the hologram platform (about), the room standing position
+    // (projects) and the mailroom (contact). The wardrobe-reveal scan AND
+    // the platform glow are driven CONTINUOUSLY by the scrubbed master
+    // timeline (heroToAbout 0→1, aboutToProjects 1→0). The per-section
+    // state functions below MUST NOT call hologram.setReveal — that would
+    // fight the scrubbed tween every frame.
+
     const setHeroState = (): void => {
       room.root.visible = true
       avatar.root.visible = true
-      avatar.root.position.set(0, 0, -0.6)
+      // "Sitting at desk" — without a Mixamo sit-typing clip we fake it
+      // by lowering the standing avatar to chair-seat height. Geometry:
+      //   - Floor:        y = 0
+      //   - Chair seat:   y ≈ 0.59 (chair pos 0 + seat top 0.59)
+      //   - Desk top:     y ≈ 1.03 (desk pos 0 + 1.0 + half of 0.06)
+      //   - Standing hips align with the avatar's local y ≈ 0.95
+      //   → Set avatar y = 0.59 - 0.95 = -0.36 to put hips at chair seat
+      //     (head ends up at y ≈ 1.49, just above the desk surface, where
+      //     a monitor/keyboard would be).
+      //   - z = 0: just in front of the chair (chair at z=0.2), facing
+      //     the desk (z=-0.8) which is 0.8 m forward of him.
+      //   - rotation.y = π so we see his back / over-shoulder shot.
+      // The legs poke down to y ≈ -0.36 and are hidden by the floor mesh.
+      // TODO(phase7-mixamo): replace with a real sit-typing clip once
+      // Mixamo retargeting is wired up.
+      avatar.root.position.set(0, -0.36, 0)
+      avatar.root.rotation.set(0, Math.PI, 0)
       avatar.play('sitting')
       hologram.root.visible = false
       mailroom.visible = false
     }
 
+    // Facing rules: Avaturn's default forward (rotation.y=0) = +Z. To make
+    // the avatar face the camera we set rotation.y so the avatar's front
+    // points back along the vector from him to the camera.
+    //   hero      camera at +Z, avatar at z=0   → want him facing -Z (back to us, working at desk)  → rotation.y = π
+    //   about     camera at z=3.5, avatar at z=8  → want -Z (toward camera) → rotation.y = π
+    //   projects  camera at z=3.5, avatar at z=-0.6 → want +Z (toward camera) → rotation.y = 0
+    //   contact   camera at z=19.5, avatar at z=16 → want +Z (toward camera) → rotation.y = 0
+
     const setAboutState = (): void => {
       room.root.visible = false
-      avatar.root.visible = false
+      avatar.root.visible = true
+      // Teleport the avatar onto the hologram platform (parked at z=8).
+      avatar.root.position.set(0, 0.05, 8)
+      // Face the camera for the wardrobe-reveal close-up.
+      avatar.root.rotation.set(0, Math.PI, 0)
+      avatar.play('standing')
       hologram.root.visible = true
       mailroom.visible = false
     }
 
     const setProjectsState = (): void => {
       room.root.visible = true
-      avatar.root.visible = true
-      avatar.root.position.set(0, 0, -0.6)
-      avatar.play('standing')
+      // The four project cards cover the centre of the viewport in the
+      // projects section, so an avatar parked at the desk reads as a
+      // tiny silhouette peeking between cards (worse than not being
+      // there at all). Hide him for projects — the cards are the star.
+      // TODO(phase7-projects-pose): if/when we want him back, position
+      // him off to the side or much further back so he doesn't collide
+      // with the cards' z-order.
+      avatar.root.visible = false
       hologram.root.visible = false
       mailroom.visible = false
     }
@@ -235,6 +278,12 @@ export function createTimeline(): MasterTimeline {
       room.root.visible = false
       avatar.root.visible = true
       avatar.root.position.set(0, 0, 16)
+      // TODO(phase7-contact-pose): the user is going to export a dedicated
+      // contact-section pose from Avaturn (probably arms-crossed standing
+      // beside the cardboard packages). When the new GLB lands, swap to it
+      // here and update the rotation to whatever lines up with the camera
+      // angle in CONTACT_STOP.
+      avatar.root.rotation.set(0, 0, 0)
       avatar.play('standing')
       hologram.root.visible = false
       mailroom.visible = true

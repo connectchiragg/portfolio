@@ -76,18 +76,13 @@ export function buildAboutToProjects(
     at,
   )
 
-  // Hologram reveal 1 → 0 over the front half
-  const reveal = { v: 1 }
-  tl.to(
-    reveal,
-    {
-      v: 0,
-      ease: 'power2.in',
-      duration: duration * 0.6,
-      onUpdate: () => hologram.setReveal(reveal.v),
-    },
-    at,
-  )
+  // Phase 7C+: do NOT fade the hologram reveal back to 0 here. The shirt
+  // outfit revealed in the about section persists through projects, and
+  // only flips back to the jersey when the user reaches contact (handled
+  // in projectsToContact.ts). We still need a no-op tween here so the
+  // master timeline's segment timing stays stable across refactors.
+  const _reveal = { v: 1 }
+  void _reveal
 
   // Time-of-day: still-night → dim warm gallery
   const tod = { v: 0 }
