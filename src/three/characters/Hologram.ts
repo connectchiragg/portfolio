@@ -20,7 +20,6 @@
 
 import {
   AdditiveBlending,
-  CanvasTexture,
   CircleGeometry,
   Color,
   DoubleSide,
@@ -28,10 +27,6 @@ import {
   Mesh,
   MeshBasicMaterial,
   PointLight,
-  Points,
-  PointsMaterial,
-  BufferGeometry,
-  Float32BufferAttribute,
   ShaderMaterial,
 } from 'three'
 
@@ -62,31 +57,92 @@ function createHologramMaterial(): ShaderMaterial {
   })
 }
 
-function buildGridPoints(): Points {
-  // 17x17 grid of points across an 8x8 plane (matches PlaneGeometry(8,8,16,16)).
-  const size = 8
-  const divisions = 16
-  const step = size / divisions
-  const half = size / 2
-  const positions: number[] = []
-  for (let i = 0; i <= divisions; i++) {
-    for (let j = 0; j <= divisions; j++) {
-      positions.push(-half + i * step, 0, -half + j * step)
+function buildTronGrid(): { mesh: Mesh; material: ShaderMaterial } {
+  // GLSL shader-based grid — pixel-perfect sharp lines with smooth
+  // analytic glow at any zoom level. No texture resolution limit.
+  const size = 12
+  const geo = new CircleGeometry(size / 2, 64)
+
+  const gridVert = `
+    varying vec2 vUv;
+    varying vec3 vWorldPos;
+    void main() {
+      vUv = uv;
+      vec4 wp = modelMatrix * vec4(position, 1.0);
+      vWorldPos = wp.xyz;
+      gl_Position = projectionMatrix * viewMatrix * wp;
     }
-  }
-  const geometry = new BufferGeometry()
-  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
-  const material = new PointsMaterial({
-    color: 0x4ad8ff,
-    size: 0.06,
-    sizeAttenuation: true,
+  `
+
+  const gridFrag = `
+    uniform float uOpacity;
+    uniform float uTime;
+    uniform vec3 uColor;
+    uniform float uRadius;
+    varying vec2 vUv;
+    varying vec3 vWorldPos;
+
+    void main() {
+      // Grid in world XZ space
+      float gridScale = 0.5; // cell size in world units
+      vec2 coord = vWorldPos.xz / gridScale;
+      vec2 grid = abs(fract(coord - 0.5) - 0.5);
+
+      // Distance to nearest grid line (in grid-cell units)
+      float lineX = grid.x;
+      float lineZ = grid.y;
+      float lineDist = min(lineX, lineZ);
+
+      // Sharp core (thin bright line)
+      float coreWidth = 0.02;
+      float core = 1.0 - smoothstep(0.0, coreWidth, lineDist);
+
+      // Glow (wider, softer falloff)
+      float glowWidth = 0.08;
+      float glow = exp(-lineDist * lineDist / (glowWidth * glowWidth));
+
+      // Combine: white-hot core + colored glow
+      vec3 coreColor = vec3(0.85, 0.97, 1.0); // near-white
+      vec3 glowColor = uColor;
+      vec3 col = core * coreColor + glow * glowColor * 0.6;
+
+      // Circular boundary — fade at edge
+      float dist = length(vUv - 0.5) * 2.0;
+      float edge = 1.0 - smoothstep(0.92, 1.0, dist);
+
+      // Bright ring at boundary
+      float ringDist = abs(dist - 0.96);
+      float ring = exp(-ringDist * ringDist / 0.0008) * 0.8;
+      col += uColor * ring;
+
+      float alpha = (core * 0.9 + glow * 0.5 + ring) * edge * uOpacity;
+
+      // Subtle pulse
+      alpha *= 0.9 + 0.1 * sin(uTime * 1.5);
+
+      gl_FragColor = vec4(col, alpha);
+    }
+  `
+
+  const mat = new ShaderMaterial({
+    vertexShader: gridVert,
+    fragmentShader: gridFrag,
     transparent: true,
-    opacity: 0.9,
     depthWrite: false,
+    side: DoubleSide,
+    blending: AdditiveBlending,
+    uniforms: {
+      uOpacity: { value: 0.9 },
+      uTime: { value: 0 },
+      uColor: { value: new Color(0x4ad8ff) },
+      uRadius: { value: size / 2 },
+    },
   })
-  const points = new Points(geometry, material)
-  points.position.y = 0.001
-  return points
+
+  const mesh = new Mesh(geo, mat)
+  mesh.rotation.x = -Math.PI / 2
+  mesh.position.y = 0.001
+  return { mesh, material: mat }
 }
 
 export function createHologram(avatar: Avatar): HologramTickable {
@@ -102,161 +158,130 @@ export function createHologram(avatar: Avatar): HologramTickable {
   const baseMaterial = createHologramMaterial()
   const clonedMaterials: ShaderMaterial[] = []
 
-  // ── Sci-fi platform — procedural canvas texture ────────────────────
-  // A flat disc with a detailed HUD-style pattern drawn via Canvas2D:
-  // concentric rings, radial tick marks, hexagonal grid, crosshair
-  // reticle, and circuit-trace arcs. Transparent background so the
-  // tron-grid dots show through.
+  // ── Sci-fi platform — GLSL shader ──────────────────────────────────
   const PLAT_RADIUS = 0.75
   const platformGroup = new Group()
   platformGroup.name = 'HologramPlatformRig'
+  platformGroup.position.y = 0.15
   root.add(platformGroup)
 
-  // Build the canvas texture
-  const RES = 1024
-  const canvas = document.createElement('canvas')
-  canvas.width = RES
-  canvas.height = RES
-  const ctx = canvas.getContext('2d')!
-  const cx = RES / 2
-  const cy = RES / 2
-
-  // Helper: stroke a circle
-  const strokeCircle = (r: number, lw: number, alpha: number) => {
-    ctx.beginPath()
-    ctx.arc(cx, cy, r, 0, Math.PI * 2)
-    ctx.lineWidth = lw
-    ctx.strokeStyle = `rgba(74, 216, 255, ${alpha})`
-    ctx.stroke()
-  }
-
-  // Concentric rings — bold with heavy glow
-  // Wide soft glow pass, then bright crisp pass on top
-  strokeCircle(RES * 0.48, 18, 0.3)   // outer wide glow
-  strokeCircle(RES * 0.48, 8, 0.6)    // outer mid glow
-  strokeCircle(RES * 0.48, 3.5, 1.0)  // outer crisp
-  strokeCircle(RES * 0.44, 14, 0.25)  // second wide glow
-  strokeCircle(RES * 0.44, 6, 0.5)    // second mid glow
-  strokeCircle(RES * 0.44, 2.5, 0.9)  // second crisp
-  strokeCircle(RES * 0.38, 8, 0.2)
-  strokeCircle(RES * 0.38, 2.0, 0.7)
-  strokeCircle(RES * 0.30, 6, 0.15)
-  strokeCircle(RES * 0.30, 2.0, 0.65)
-  strokeCircle(RES * 0.20, 4, 0.12)
-  strokeCircle(RES * 0.20, 1.5, 0.5)
-  strokeCircle(RES * 0.10, 3, 0.1)
-  strokeCircle(RES * 0.10, 1.2, 0.45)
-
-  // Radial tick marks on the outer ring
-  for (let i = 0; i < 72; i++) {
-    const angle = (i / 72) * Math.PI * 2
-    const inner = i % 6 === 0 ? RES * 0.41 : RES * 0.43
-    const outer = RES * 0.47
-    const lw = i % 6 === 0 ? 4.5 : 1.2
-    const alpha = i % 6 === 0 ? 1.0 : 0.4
-    ctx.beginPath()
-    ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner)
-    ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer)
-    ctx.lineWidth = lw
-    ctx.strokeStyle = `rgba(74, 216, 255, ${alpha})`
-    ctx.stroke()
-  }
-
-  // Crosshair reticle — very glowy
-  const reticleLen = RES * 0.14
-  // Wide glow
-  ctx.strokeStyle = `rgba(74, 216, 255, 0.15)`
-  ctx.lineWidth = 14
-  ctx.beginPath(); ctx.moveTo(cx - reticleLen, cy); ctx.lineTo(cx + reticleLen, cy); ctx.stroke()
-  ctx.beginPath(); ctx.moveTo(cx, cy - reticleLen); ctx.lineTo(cx, cy + reticleLen); ctx.stroke()
-  // Mid glow
-  ctx.strokeStyle = `rgba(74, 216, 255, 0.35)`
-  ctx.lineWidth = 4
-  ctx.beginPath(); ctx.moveTo(cx - reticleLen, cy); ctx.lineTo(cx + reticleLen, cy); ctx.stroke()
-  ctx.beginPath(); ctx.moveTo(cx, cy - reticleLen); ctx.lineTo(cx, cy + reticleLen); ctx.stroke()
-  // Crisp
-  ctx.strokeStyle = `rgba(74, 216, 255, 0.8)`
-  ctx.lineWidth = 1.5
-  ctx.beginPath(); ctx.moveTo(cx - reticleLen, cy); ctx.lineTo(cx + reticleLen, cy); ctx.stroke()
-  ctx.beginPath(); ctx.moveTo(cx, cy - reticleLen); ctx.lineTo(cx, cy + reticleLen); ctx.stroke()
-  // Centre dot with big glow
-  ctx.beginPath()
-  ctx.arc(cx, cy, 12, 0, Math.PI * 2)
-  ctx.fillStyle = `rgba(74, 216, 255, 0.1)`
-  ctx.fill()
-  ctx.beginPath()
-  ctx.arc(cx, cy, 6, 0, Math.PI * 2)
-  ctx.fillStyle = `rgba(74, 216, 255, 0.35)`
-  ctx.fill()
-  ctx.beginPath()
-  ctx.arc(cx, cy, 3, 0, Math.PI * 2)
-  ctx.fillStyle = `rgba(74, 216, 255, 1.0)`
-  ctx.fill()
-
-  // Hexagonal grid pattern (inside the mid ring)
-  const hexR = RES * 0.035 // hex cell radius
-  const hexH = hexR * Math.sqrt(3)
-  ctx.strokeStyle = `rgba(74, 216, 255, 0.18)`
-  ctx.lineWidth = 0.9
-  const gridRadius = RES * 0.36
-  for (let row = -15; row <= 15; row++) {
-    for (let col = -15; col <= 15; col++) {
-      const hx = cx + col * hexR * 1.5
-      const hy = cy + row * hexH + (col % 2 === 0 ? 0 : hexH / 2)
-      const dist = Math.sqrt((hx - cx) ** 2 + (hy - cy) ** 2)
-      if (dist > gridRadius || dist < RES * 0.08) continue
-      ctx.beginPath()
-      for (let k = 0; k < 6; k++) {
-        const a = (Math.PI / 3) * k - Math.PI / 6
-        const px = hx + hexR * 0.8 * Math.cos(a)
-        const py = hy + hexR * 0.8 * Math.sin(a)
-        k === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)
-      }
-      ctx.closePath()
-      ctx.stroke()
+  const platVert = `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
-  }
+  `
 
-  // Circuit-trace arcs (decorative partial arcs)
-  const drawArc = (r: number, startDeg: number, endDeg: number, lw: number, alpha: number) => {
-    ctx.beginPath()
-    ctx.arc(cx, cy, r, (startDeg * Math.PI) / 180, (endDeg * Math.PI) / 180)
-    ctx.lineWidth = lw
-    ctx.strokeStyle = `rgba(74, 216, 255, ${alpha})`
-    ctx.stroke()
-  }
-  drawArc(RES * 0.35, 20, 80, 4, 0.8)
-  drawArc(RES * 0.35, 200, 260, 4, 0.8)
-  drawArc(RES * 0.25, 100, 170, 3.5, 0.7)
-  drawArc(RES * 0.25, 280, 350, 3.5, 0.7)
-  drawArc(RES * 0.15, 45, 135, 3, 0.6)
-  drawArc(RES * 0.15, 225, 315, 3, 0.6)
+  const platFrag = `
+    #define PI 3.14159265
+    uniform float uTime;
+    uniform float uReveal;
+    uniform vec3 uColor;
+    varying vec2 vUv;
 
-  // Small corner markers on cardinal directions (outer ring)
-  const markerR = RES * 0.46
-  for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2
-    const mx = cx + Math.cos(a) * markerR
-    const my = cy + Math.sin(a) * markerR
-    ctx.strokeStyle = `rgba(74, 216, 255, 0.6)`
-    ctx.lineWidth = 1.5
-    // Small diamond
-    const s = 6
-    ctx.beginPath()
-    ctx.moveTo(mx, my - s); ctx.lineTo(mx + s, my)
-    ctx.lineTo(mx, my + s); ctx.lineTo(mx - s, my)
-    ctx.closePath()
-    ctx.stroke()
-  }
+    // Smooth line helper — distance-based with glow
+    float line(float d, float width, float glowWidth) {
+      float core = 1.0 - smoothstep(0.0, width, abs(d));
+      float glow = exp(-d * d / (glowWidth * glowWidth));
+      return core + glow * 0.5;
+    }
 
-  const platformTex = new CanvasTexture(canvas)
+    // Ring helper
+    float ring(float dist, float r, float width, float glowW) {
+      return line(dist - r, width, glowW);
+    }
+
+    void main() {
+      vec2 p = (vUv - 0.5) * 2.0; // -1..1
+      float dist = length(p);
+      float angle = atan(p.y, p.x);
+
+      // Clip to circle
+      if (dist > 1.0) discard;
+
+      // Dark opaque background
+      vec3 bg = vec3(0.02, 0.04, 0.08);
+      vec3 col = bg;
+      float alpha = 1.0;
+
+      vec3 coreCol = vec3(0.7, 0.96, 1.0);
+
+      // ── Concentric rings ──
+      float r1 = ring(dist, 0.96, 0.004, 0.015);
+      float r2 = ring(dist, 0.88, 0.003, 0.012);
+      float r3 = ring(dist, 0.76, 0.002, 0.010);
+      float r4 = ring(dist, 0.60, 0.003, 0.012);
+      float r5 = ring(dist, 0.40, 0.002, 0.008);
+      float r6 = ring(dist, 0.20, 0.002, 0.006);
+      float rings = r1 + r2 * 0.7 + r3 * 0.5 + r4 * 0.6 + r5 * 0.4 + r6 * 0.3;
+      col += uColor * rings * 0.8;
+      col += coreCol * (r1 * 0.5 + r4 * 0.3);
+
+      // ── Radial tick marks (between ring 0.88 and 0.96) ──
+      float tickAngle = mod(angle + PI, PI * 2.0 / 72.0);
+      float tickDist = abs(tickAngle - PI / 72.0);
+      float inTickZone = step(0.89, dist) * step(dist, 0.95);
+      // Major ticks every 30 degrees
+      float majorAngle = mod(angle + PI, PI / 6.0);
+      float majorDist = abs(majorAngle - PI / 12.0);
+      float majorTick = (1.0 - smoothstep(0.0, 0.012, majorDist)) * inTickZone;
+      // Minor ticks every 5 degrees
+      float minorAngle = mod(angle + PI, PI / 36.0);
+      float minorDist = abs(minorAngle - PI / 72.0);
+      float minorTick = (1.0 - smoothstep(0.0, 0.006, minorDist)) * inTickZone * 0.4;
+      col += uColor * (majorTick * 0.9 + minorTick * 0.3);
+      col += coreCol * majorTick * 0.4;
+
+      // ── Crosshair reticle ──
+      float crossH = line(p.y, 0.003, 0.012) * step(dist, 0.28);
+      float crossV = line(p.x, 0.003, 0.012) * step(dist, 0.28);
+      col += uColor * (crossH + crossV) * 0.5;
+      col += coreCol * (crossH + crossV) * 0.2;
+
+      // Centre dot
+      float dot = exp(-dist * dist / 0.0004);
+      col += coreCol * dot;
+      col += uColor * exp(-dist * dist / 0.002) * 0.4;
+
+      // ── Circuit arcs (partial rings, rotating) ──
+      float anim = uTime * 0.8;
+      float arc1a = smoothstep(-0.05, 0.0, sin(angle + anim) - 0.5) * ring(dist, 0.70, 0.003, 0.01) * 0.6;
+      float arc2a = smoothstep(-0.05, 0.0, sin(angle * 2.0 - anim * 1.3) - 0.3) * ring(dist, 0.50, 0.002, 0.008) * 0.5;
+      float arc3a = smoothstep(-0.05, 0.0, cos(angle * 3.0 + anim * 0.7) - 0.6) * ring(dist, 0.30, 0.002, 0.008) * 0.4;
+      col += uColor * (arc1a + arc2a + arc3a);
+
+      // ── Cardinal diamond markers ──
+      for (int i = 0; i < 4; i++) {
+        float a = float(i) * PI / 2.0;
+        vec2 mp = vec2(cos(a), sin(a)) * 0.92;
+        float md = length(p - mp);
+        float diamond = exp(-md * md / 0.0003);
+        col += uColor * diamond * 0.5;
+      }
+
+      // Edge fade
+      float edgeFade = 1.0 - smoothstep(0.94, 1.0, dist);
+      col = mix(bg, col, edgeFade);
+
+      // Subtle pulse
+      col *= 0.92 + 0.08 * sin(uTime * 1.5);
+
+      gl_FragColor = vec4(col, alpha * uReveal);
+    }
+  `
+
   const platformGeo = new CircleGeometry(PLAT_RADIUS, 64)
-  const platformMat = new MeshBasicMaterial({
-    map: platformTex,
+  const platformMat = new ShaderMaterial({
+    vertexShader: platVert,
+    fragmentShader: platFrag,
     transparent: true,
     side: DoubleSide,
-    depthWrite: false,
-    blending: AdditiveBlending,
+    uniforms: {
+      uTime: { value: 0 },
+      uReveal: { value: 0 },
+      uColor: { value: new Color(0x4ad8ff) },
+    },
   })
   const platform = new Mesh(platformGeo, platformMat)
   platform.name = 'HologramPlatform'
@@ -264,28 +289,13 @@ export function createHologram(avatar: Avatar): HologramTickable {
   platform.position.y = 0.02
   platformGroup.add(platform)
 
-  // Glow disc — a larger, soft, additive circle underneath for bloom
-  const glowGeo = new CircleGeometry(PLAT_RADIUS * 1.4, 64)
-  const glowMat = new MeshBasicMaterial({
-    color: 0x4ad8ff,
-    transparent: true,
-    opacity: 0.15,
-    side: DoubleSide,
-    depthWrite: false,
-    blending: AdditiveBlending,
-  })
-  const glowDisc = new Mesh(glowGeo, glowMat)
-  glowDisc.rotation.x = -Math.PI / 2
-  glowDisc.position.y = 0.015
-  platformGroup.add(glowDisc)
-
   // Upward PointLight — casts cyan light onto the avatar from below
   const platLight = new PointLight(0x4ad8ff, 8, 4, 1.5)
   platLight.position.set(0, 0.3, 0)
   platformGroup.add(platLight)
 
-  // Dotted tron-grid floor around the platform.
-  const grid = buildGridPoints()
+  // Tron-style neon line grid floor (shader-based).
+  const { mesh: grid, material: gridMaterial } = buildTronGrid()
   grid.name = 'HologramGrid'
   root.add(grid)
 
@@ -306,11 +316,9 @@ export function createHologram(avatar: Avatar): HologramTickable {
       mat.uniforms.uReveal.value = clamped
     }
     // Drive platform + glow + light + grid with reveal
-    platformMat.opacity = clamped
-    glowMat.opacity = 0.15 * clamped
+    platformMat.uniforms.uReveal.value = clamped
     platLight.intensity = 8 * clamped
-    const gridMat = grid.material as PointsMaterial
-    gridMat.opacity = 0.9 * clamped
+    gridMaterial.uniforms.uOpacity.value = 0.9 * clamped
   }
 
   const bindAnalyser = (node: AnalyserNode) => {
@@ -323,8 +331,10 @@ export function createHologram(avatar: Avatar): HologramTickable {
     for (const mat of clonedMaterials) {
       mat.uniforms.uTime.value = elapsed
     }
-    // Slowly rotate the platform disc for a scanning effect
-    platform.rotation.z = elapsed * 0.15
+    // Feed time to platform shader (drives arc rotation + pulse)
+    platformMat.uniforms.uTime.value = elapsed
+    // Feed time to the grid shader for subtle pulse
+    gridMaterial.uniforms.uTime.value = elapsed
 
     // Poll analyser for bass amplitude if bound and producing data.
     if (analyser && audioBuffer) {
@@ -354,11 +364,7 @@ export function createHologram(avatar: Avatar): HologramTickable {
     // Phase 7C+: body materials live on the Avatar now; nothing for the
     // hologram to restore. Just dispose the platform + grid + analyser.
     platformMat.dispose()
-    platformTex.dispose()
     platformGeo.dispose()
-    glowGeo.dispose()
-    glowMat.dispose()
-
     // Dispose base material + program slot.
     baseMaterial.dispose()
 
@@ -366,7 +372,7 @@ export function createHologram(avatar: Avatar): HologramTickable {
 
     root.remove(grid)
     grid.geometry.dispose()
-    ;(grid.material as PointsMaterial).dispose()
+    gridMaterial.dispose()
 
     analyser = null
     audioBuffer = null

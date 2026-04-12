@@ -363,9 +363,7 @@ export function createTimeline(): MasterTimeline {
       heroDisc.visible = false
       avatar.root.visible = true
       // Teleport the avatar onto the hologram platform (parked at z=8).
-      // X offset to centre model on the platform disc.
-      avatar.root.position.set(-0.38, 0, 8)
-      // Face the camera for the wardrobe-reveal close-up.
+      avatar.root.position.set(0, 0.15, 8)
       avatar.root.rotation.set(0, Math.PI, 0)
       avatar.play('standing')
       avatarExt.setShowContact?.(false)
@@ -538,7 +536,7 @@ export function createTimeline(): MasterTimeline {
         if (rect.top >= 0) {
           // About section is entering or re-entering (scroll-back) —
           // objects at base position, ensure visible
-          avatar.root.position.y = 0
+          avatar.root.position.y = 0.15
           hologram.root.position.y = 0
           avatar.root.visible = true
           hologram.root.visible = true
@@ -548,7 +546,7 @@ export function createTimeline(): MasterTimeline {
           const scrolledPx = -rect.top
           const lift = scrolledPx * worldPerPx * 0.82
 
-          avatar.root.position.y = lift
+          avatar.root.position.y = 0.15 + lift
           hologram.root.position.y = lift
 
           // Show/hide based on how far we've scrolled past
