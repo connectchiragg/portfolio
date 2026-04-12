@@ -608,24 +608,7 @@ export function buildMailroom(): Group {
     rainTick(dt)
   }
 
-  // ─── Football lifted onto the pedestal so the hand grabs it ─────────────
-  // Pedestal top at y=1.27. Football radius 0.10 → centre y=1.37,
-  // top y=1.47. The avatar's curled hand wraps around the upper half
-  // of the ball.
-  const footballTex = makeFootballTexture()
-  const football = new Mesh(
-    new SphereGeometry(0.1, 32, 24),
-    new MeshStandardMaterial({
-      map: footballTex,
-      roughness: 0.62,
-      metalness: 0,
-    }),
-  )
-  football.position.set(0.96, 1.37, 0.65)
-  football.castShadow = true
-  football.receiveShadow = true
-  football.name = 'MailroomFootball'
-  root.add(football)
+  // Football removed from pedestal — now held in avatar's hand (Avatar.ts)
 
   // ─── The ONLY side prop kept is the small desk lamp on the side stack.
   // Tape roll, mailing tube, clipboard and the hanging tags were removed

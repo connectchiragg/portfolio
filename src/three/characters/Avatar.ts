@@ -47,6 +47,9 @@ import {
   MeshStandardMaterial,
   MeshBasicMaterial,
   PlaneGeometry,
+  CylinderGeometry,
+  SphereGeometry,
+  Box3,
   DoubleSide,
   FrontSide,
   Bone,
@@ -460,6 +463,37 @@ export async function loadAvatar(
 
   // ── Find the head bone (use the thinking mesh; bones are equivalent
   //    on all three rigs since they share the same skeleton).
+  // Soccer ball positioned at the palm center — computed from finger bones
+  // each frame so it tracks correctly regardless of bone local axis orientation.
+  const palmBones = ['LeftHand']
+    .map(name => findByName(contactModel, name) as Bone | null)
+    .filter((b): b is Bone => b !== null)
+
+  let handBall: Group | null = null
+  if (palmBones.length > 0) {
+    const footballGltf = await loader.load('/models/football.glb')
+    handBall = footballGltf.scene
+    handBall.name = 'HandBall'
+    // Scale to real football size (~22cm diameter)
+    // Measure the GLB's bounding box to get the right scale
+    const box = new Box3().setFromObject(handBall)
+    const size = new Vector3()
+    box.getSize(size)
+    const maxDim = Math.max(size.x, size.y, size.z)
+    const targetDiameter = 0.22
+    const s = targetDiameter / maxDim
+    handBall.scale.setScalar(s)
+    handBall.traverse((obj) => {
+      const mesh = obj as Mesh
+      if ((mesh as unknown as { isMesh?: boolean }).isMesh) {
+        mesh.castShadow = true
+        mesh.receiveShadow = true
+      }
+    })
+    root.add(handBall)
+    handBall.visible = false
+  }
+
   const headBone = (findByName(thinkingModel, 'head') ?? null) as Bone | null
 
   // ── Pose state (no-op for now; bundled clip is the only motion source) ─
@@ -581,6 +615,25 @@ export async function loadAvatar(
     if (shirtModel.visible) shirtMixer.update(dt)
     if (contactModel.visible) contactMixer.update(dt)
     uniforms.uTime.value = elapsed
+
+    // Position the football at the average of the finger knuckle world positions
+    if (handBall && contactModel.visible && palmBones.length > 0) {
+      handBall.visible = true
+      const avg = new Vector3()
+      for (const bone of palmBones) {
+        const wp = new Vector3()
+        bone.getWorldPosition(wp)
+        avg.add(wp)
+      }
+      avg.divideScalar(palmBones.length)
+      // Shift down so the ball sits under the forearm/wrist
+      avg.y -= 0.12
+      // Convert world position to the ball's parent (root) local space
+      root.worldToLocal(avg)
+      handBall.position.copy(avg)
+    } else if (handBall) {
+      handBall.visible = false
+    }
 
     if (!headTrackingActive && headBone) {
       headBone.rotation.copy(baseHeadRot)
