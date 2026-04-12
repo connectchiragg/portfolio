@@ -31,7 +31,7 @@ const firstName = profile.name.split(' ')[0] ?? profile.name
         <div
           class="hidden font-mono text-[10px] uppercase tracking-[0.28em] text-cyan/70 sm:block"
         >
-          ◇ Scan complete · 100%
+          ◇ Scanning · <span id="scan-pct">0%</span>
         </div>
       </div>
 

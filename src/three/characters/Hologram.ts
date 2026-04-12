@@ -27,6 +27,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   PointLight,
+  TorusGeometry,
   ShaderMaterial,
 } from 'three'
 
@@ -294,6 +295,58 @@ export function createHologram(avatar: Avatar): HologramTickable {
   platLight.position.set(0, 0.3, 0)
   platformGroup.add(platLight)
 
+  // ── Laser scan ring — 3D glowing torus ──────────────────────────────
+  // A thick luminescent torus ring that sweeps up through the avatar.
+  const LASER_TUBE = 0.025 // tube thickness
+  const laserTorusGeo = new TorusGeometry(PLAT_RADIUS * 0.92, LASER_TUBE, 16, 64)
+  const laserVert = `
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    void main() {
+      vNormal = normalize(normalMatrix * normal);
+      vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+      vViewDir = normalize(-mvPos.xyz);
+      gl_Position = projectionMatrix * mvPos;
+    }
+  `
+  const laserFrag = `
+    uniform vec3 uColor;
+    uniform float uTime;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    void main() {
+      // Fresnel glow — brighter at edges
+      float fresnel = 1.0 - abs(dot(vNormal, vViewDir));
+      fresnel = pow(fresnel, 1.5);
+      // Bright core + fresnel rim
+      float core = 0.6;
+      float glow = core + fresnel * 1.5;
+      // Subtle pulse
+      glow *= 0.9 + 0.1 * sin(uTime * 10.0);
+      vec3 col = uColor * glow;
+      // Hot white centre
+      col += vec3(0.8, 0.95, 1.0) * core * 0.4;
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `
+  const laserRingMat = new ShaderMaterial({
+    vertexShader: laserVert,
+    fragmentShader: laserFrag,
+    transparent: true,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    side: DoubleSide,
+    uniforms: {
+      uColor: { value: new Color(0x4ad8ff) },
+      uTime: { value: 0 },
+    },
+  })
+  const laserRing = new Mesh(laserTorusGeo, laserRingMat)
+  laserRing.rotation.x = Math.PI / 2 // lie flat, parallel to launch pad
+  laserRing.position.y = -10 // off-screen by default
+  laserRing.name = 'LaserScanRing'
+  root.add(laserRing)
+
   // Tron-style neon line grid floor (shader-based).
   const { mesh: grid, material: gridMaterial } = buildTronGrid()
   grid.name = 'HologramGrid'
@@ -321,6 +374,12 @@ export function createHologram(avatar: Avatar): HologramTickable {
     gridMaterial.uniforms.uOpacity.value = 0.9 * clamped
   }
 
+  // Scroll-driven laser ring: 0 = feet, 1 = above head
+  const setLaserProgress = (p: number) => {
+    const y = 0.15 + p * 2.0 // feet(0.15) to above head(2.15)
+    laserRing.position.y = y
+  }
+
   const bindAnalyser = (node: AnalyserNode) => {
     analyser = node
     audioBuffer = new Uint8Array(new ArrayBuffer(node.frequencyBinCount))
@@ -333,8 +392,30 @@ export function createHologram(avatar: Avatar): HologramTickable {
     }
     // Feed time to platform shader (drives arc rotation + pulse)
     platformMat.uniforms.uTime.value = elapsed
-    // Feed time to the grid shader for subtle pulse
+    // Feed time to the grid + laser shaders
     gridMaterial.uniforms.uTime.value = elapsed
+    laserRingMat.uniforms.uTime.value = elapsed
+    // Only rotate + scan when the hologram is visible (about section)
+    if (!root.visible) return
+    // Slowly rotate only the about-section models on the turntable
+    const avatarExt = avatar as Avatar & { setAboutRotation?: (y: number) => void }
+    const aboutRotY = elapsed * 1.5
+    avatarExt.setAboutRotation?.(aboutRotY)
+    // Wardrobe scan: each outfit gets one full rotation.
+    // Over a ~2.8 rotation cycle:
+    //   0.0–0.4: ramp 0→1 (slow scan to jersey)
+    //   0.4–1.4: hold at 1 (jersey for one full rotation)
+    //   1.4–1.8: ramp 1→0 (slow scan back to shirt)
+    //   1.8–2.8: hold at 0 (shirt for one full rotation)
+    const rotations = aboutRotY / (Math.PI * 2)
+    const period = 2.8
+    const cycle = ((rotations % period) + period) % period
+    let reveal: number
+    if (cycle < 0.4) reveal = cycle / 0.4
+    else if (cycle < 1.4) reveal = 1
+    else if (cycle < 1.8) reveal = 1 - (cycle - 1.4) / 0.4
+    else reveal = 0
+    avatarWithScan.setScanReveal?.(reveal)
 
     // Poll analyser for bass amplitude if bound and producing data.
     if (analyser && audioBuffer) {
@@ -374,6 +455,10 @@ export function createHologram(avatar: Avatar): HologramTickable {
     grid.geometry.dispose()
     gridMaterial.dispose()
 
+    root.remove(laserRing)
+    laserTorusGeo.dispose()
+    laserRingMat.dispose()
+
     analyser = null
     audioBuffer = null
   }
@@ -382,6 +467,7 @@ export function createHologram(avatar: Avatar): HologramTickable {
     root,
     bindAnalyser,
     setReveal,
+    setLaserProgress,
     dispose,
     tick,
   }

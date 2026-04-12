@@ -48,6 +48,7 @@ import {
   MeshBasicMaterial,
   PlaneGeometry,
   DoubleSide,
+  FrontSide,
   Bone,
   type IUniform,
 } from 'three'
@@ -78,18 +79,17 @@ function makeChirag10Texture(): CanvasTexture {
   const ctx = canvas.getContext('2d')!
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  // Tight, centered "CHIRAG" name + "10" number, slightly smaller than v1
-  // so it sits naturally between the shoulder blades instead of looking
-  // like a giant decal slapped on the back.
+  // Centered "CHIRAG" name + "10" number — sized to be clearly
+  // readable on the jersey back during the turntable rotation.
   ctx.fillStyle = '#0b1b3a'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
-  ctx.font = 'bold 56px sans-serif'
-  ctx.fillText('CHIRAG', canvas.width / 2, 80)
+  ctx.font = 'bold 72px sans-serif'
+  ctx.fillText('CHIRAG', canvas.width / 2, 75)
 
-  ctx.font = 'bold 200px sans-serif'
-  ctx.fillText('10', canvas.width / 2, 240)
+  ctx.font = 'bold 240px sans-serif'
+  ctx.fillText('10', canvas.width / 2, 245)
 
   const tex = new CanvasTexture(canvas)
   tex.colorSpace = SRGBColorSpace
@@ -108,11 +108,11 @@ function makeChirag10Texture(): CanvasTexture {
 function makeChirag10Plane(): Mesh {
   const tex = makeChirag10Texture()
   const plane = new Mesh(
-    new PlaneGeometry(0.26, 0.2),
+    new PlaneGeometry(0.32, 0.25),
     new MeshBasicMaterial({
       map: tex,
       transparent: true,
-      side: DoubleSide,
+      side: FrontSide,
       depthWrite: false,
       depthTest: false,
     }),
@@ -129,21 +129,19 @@ function makeChirag10Plane(): Mesh {
  * plane follows in lock-step — exactly what "pin to back" means.
  */
 function pinChirag10ToChestBone(model: Object3D): Mesh | null {
-  const spine2 = findByName(model, 'Spine2') as Bone | null
-  if (!spine2) {
-    console.warn('[Avatar] Spine2 bone not found — chirag plane skipped')
+  // Pin to Spine (mid-back) so the label sits between the shoulder blades
+  const spine = (findByName(model, 'Spine2') ?? findByName(model, 'Spine1') ?? findByName(model, 'Spine')) as Bone | null
+  if (!spine) {
+    console.warn('[Avatar] Spine bone not found — chirag plane skipped')
     return null
   }
   const plane = makeChirag10Plane()
-  // In the Mixamo/Avaturn rig, Spine2's local axes are: +Y along the
-  // spine (toward the head), +Z forward (body's front), -Z back. The
-  // chest centre is roughly at the bone origin; the back surface is
-  // ~12 cm in -Z. We position a bit further out (-0.14) to clear the
-  // body in deformed poses.
+  // Position behind the bone (-Z = back). Offset further out to clear
+  // the body mesh in deformed poses.
   plane.position.set(0, 0.05, -0.14)
   // Rotate so the plane's local normal points toward -Z (the back).
   plane.rotation.y = Math.PI
-  spine2.add(plane)
+  spine.add(plane)
   return plane
 }
 
@@ -168,6 +166,7 @@ interface SharedScanUniforms {
   uScanReveal: IUniform<number>
   uTime: IUniform<number>
   uScanColor: IUniform<[number, number, number]>
+  uLaserY: IUniform<number>
 }
 
 function makeSharedUniforms(): SharedScanUniforms {
@@ -176,6 +175,7 @@ function makeSharedUniforms(): SharedScanUniforms {
     uScanReveal: { value: 0 },
     uTime: { value: 0 },
     uScanColor: { value: [0.29, 0.85, 1.0] }, // #4ad8ff cyan
+    uLaserY: { value: -10 }, // off-screen by default
   }
 }
 
@@ -208,12 +208,14 @@ function injectScanReveal(
     shader.uniforms.uTime = uniforms.uTime
     shader.uniforms.uScanColor = uniforms.uScanColor
     shader.uniforms.uIsAlternate = { value: isAlternate ? 1.0 : 0.0 }
+    shader.uniforms.uLaserY = uniforms.uLaserY
 
-    // VERTEX: forward bone-deformed world Y to the fragment shader.
+    // VERTEX: forward bone-deformed world position to the fragment shader.
     shader.vertexShader = shader.vertexShader.replace(
       '#include <common>',
       `#include <common>
-varying float vScanWorldY;`,
+varying float vScanWorldY;
+varying vec3 vScanWorldPos;`,
     )
     shader.vertexShader = shader.vertexShader.replace(
       '#include <project_vertex>',
@@ -221,10 +223,11 @@ varying float vScanWorldY;`,
 {
   vec4 _scanWorldPos = modelMatrix * vec4(transformed, 1.0);
   vScanWorldY = _scanWorldPos.y;
+  vScanWorldPos = _scanWorldPos.xyz;
 }`,
     )
 
-    // FRAGMENT: discard + glow band at the scan threshold.
+    // FRAGMENT: crystallic dissolution at the scan threshold.
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <common>',
       `#include <common>
@@ -233,34 +236,105 @@ uniform float uScanReveal;
 uniform float uTime;
 uniform vec3 uScanColor;
 uniform float uIsAlternate;
-varying float vScanWorldY;`,
+varying float vScanWorldY;
+varying vec3 vScanWorldPos;
+
+// Hash for crystalline Voronoi noise
+vec3 _hash3(vec3 p) {
+  p = vec3(
+    dot(p, vec3(127.1, 311.7, 74.7)),
+    dot(p, vec3(269.5, 183.3, 246.1)),
+    dot(p, vec3(113.5, 271.9, 124.6))
+  );
+  return fract(sin(p) * 43758.5453);
+}
+
+// Voronoi distance — returns distance to nearest cell edge
+// giving a crystalline / shattered glass pattern
+float voronoi(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  float minDist = 1.0;
+  float secondDist = 1.0;
+  for (int x = -1; x <= 1; x++) {
+    for (int y = -1; y <= 1; y++) {
+      for (int z = -1; z <= 1; z++) {
+        vec3 neighbor = vec3(float(x), float(y), float(z));
+        vec3 point = _hash3(i + neighbor);
+        vec3 diff = neighbor + point - f;
+        float d = dot(diff, diff);
+        if (d < minDist) {
+          secondDist = minDist;
+          minDist = d;
+        } else if (d < secondDist) {
+          secondDist = d;
+        }
+      }
+    }
+  }
+  // Edge distance (difference between closest and second-closest)
+  return sqrt(secondDist) - sqrt(minDist);
+}`,
     )
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <dithering_fragment>',
       `#include <dithering_fragment>
 {
-  // While the scan is active (0 < uScanReveal < 1), exactly one of the
-  // two outfits is rendered per fragment so they never overlap.
-  // uScanReveal = 0 → pure jersey (default outfit)
-  // uScanReveal = 1 → pure shirt (alternate outfit)
-  // The scan line travels from above-head (v=0) down to below-feet (v=1).
   if (uScanReveal > 0.001 && uScanReveal < 0.999) {
     float scanLine = uScanY;
+    float d = vScanWorldY - scanLine;
+
+    // Crystalline noise at the fragment's world position
+    float crystal = voronoi(vScanWorldPos * 30.0);
+
+    // Dissolution zone: fragments within ±0.25 of scan line dissolve
+    // based on crystalline noise threshold
+    float dissolveWidth = 0.25;
+    float normalizedDist;
+
     if (uIsAlternate > 0.5) {
-      // Shirt: visible ABOVE the scan line (revealed first as scan moves down).
-      if (vScanWorldY < scanLine) discard;
+      // Shirt: visible ABOVE scan line
+      normalizedDist = -d / dissolveWidth; // -1 (far below) to +1 (far above)
     } else {
-      // Jersey: visible BELOW the scan line.
-      if (vScanWorldY > scanLine) discard;
+      // Jersey: visible BELOW scan line
+      normalizedDist = d / dissolveWidth;  // -1 (far above) to +1 (far below)
     }
-    // Cyan glow band right at the threshold (~15 cm thick falloff for a
-    // chunkier, more cinematic beam).
-    float dist = abs(vScanWorldY - scanLine);
-    float band = 1.0 - smoothstep(0.0, 0.15, dist);
-    // Pulse the band brightness with time so it reads as an active scan.
+
+    // Outside dissolution zone: hard show/hide
+    if (normalizedDist > 1.0) discard;
+
+    // Inside dissolution zone: crystalline breakup
+    if (normalizedDist > 0.0) {
+      // Threshold increases toward the discard side
+      float threshold = normalizedDist;
+      // Fragments with crystal value below threshold survive
+      if (crystal < threshold * 0.8) discard;
+    }
+
+    // Glowing crystal edges at the dissolution boundary
+    float edgeDist = abs(d);
+    float inZone = 1.0 - smoothstep(0.0, dissolveWidth, edgeDist);
+
+    // Crystal edge highlights — bright where Voronoi edges are thin
+    float crystalEdge = 1.0 - smoothstep(0.0, 0.15, crystal);
+    float edgeGlow = crystalEdge * inZone;
+
+    // Bright scan line
+    float scanBand = exp(-edgeDist * edgeDist / 0.003);
+
+    // Pulse
     float pulse = 0.85 + 0.15 * sin(uTime * 8.0);
-    gl_FragColor.rgb += uScanColor * band * 3.0 * pulse;
+
+    // Combine: crystal edges glow cyan, scan line glows bright
+    vec3 glow = uScanColor * (edgeGlow * 2.0 + scanBand * 4.0) * pulse;
+
+    // Emissive sparkle on surviving crystal fragments near the edge
+    float sparkle = step(0.7, crystal) * inZone * 3.0;
+    glow += vec3(0.8, 0.95, 1.0) * sparkle * pulse;
+
+    gl_FragColor.rgb += glow;
   }
+
 }`,
     )
   }
@@ -351,12 +425,12 @@ export async function loadAvatar(
   root.add(shirtModel)
   root.add(contactModel)
 
-  // ── CHIRAG 10 jersey-back overlay (hero only) ──────────────────────────
+  // ── CHIRAG 10 jersey-back overlay ──────────────────────────────────────
   // Pinned to the Spine2 chest bone so it deforms with the bundled
-  // animation. The about-section jersey-about mesh and the contact
-  // model do NOT get one — about scan stays clean, contact wears its
-  // own outfit.
-  pinChirag10ToChestBone(thinkingModel)
+  // animation. Applied to both the hero jersey and the about-section
+  // jersey so the number is visible during the turntable rotation.
+  const chirag10Hero = pinChirag10ToChestBone(thinkingModel)
+  const chirag10About = pinChirag10ToChestBone(jerseyAboutModel)
 
   // ── Animation mixers (one per model). Each plays the bundled
   //    avaturn_animation clip baked into its own GLB. The thinking pose
@@ -434,7 +508,7 @@ export async function loadAvatar(
   //   scan 0<v<1     → both visible, scan band glowing in between
   //   hero (thinking)→ thinking visible, scan duo + contact hidden
   //   contact        → contact jersey visible, scan duo + thinking hidden
-  const SCAN_TOP = 2.0 // ~head height + a margin
+  const SCAN_TOP = 2.3 // ~head height + generous margin (avatar lifted 0.15)
   const SCAN_BOTTOM = -0.05 // just under the feet
   let isContactSwap = false
   let isHeroThinking = true // start in hero pose
@@ -462,7 +536,17 @@ export async function loadAvatar(
     const clamped = MathUtils.clamp(v, 0, 1)
     uniforms.uScanReveal.value = clamped
     uniforms.uScanY.value = MathUtils.lerp(SCAN_TOP, SCAN_BOTTOM, clamped)
+    // Hide CHIRAG 10 labels when shirt is showing (reveal > 0.5)
+    const jerseyVisible = clamped < 0.05
+    if (chirag10Hero) chirag10Hero.visible = jerseyVisible
+    if (chirag10About) chirag10About.visible = jerseyVisible
     refreshDuoVisibility()
+  }
+
+  // Scroll-driven laser disc position (0=feet, 1=head)
+  const setLaserProgress = (p: number): void => {
+    const clamped = MathUtils.clamp(p, 0, 1)
+    uniforms.uLaserY.value = MathUtils.lerp(SCAN_BOTTOM, SCAN_TOP, clamped)
   }
 
   const setShowContact = (on: boolean): void => {
@@ -530,6 +614,13 @@ export async function loadAvatar(
   // mixer field on the contract: hand back the thinking mixer (the
   // canonical reference for the hero pose; orchestrator code that pokes
   // at the mixer can use this one).
+  // Rotate only the about-section models (jersey + shirt scan duo).
+  // Does not affect hero thinking or contact poses.
+  const setAboutRotation = (y: number): void => {
+    jerseyAboutModel.rotation.y = y
+    shirtModel.rotation.y = y
+  }
+
   return {
     root,
     mixer: thinkingMixer,
@@ -537,8 +628,10 @@ export async function loadAvatar(
     lookAt,
     applyJersey,
     setScanReveal,
+    setLaserProgress,
     setShowContact,
     setHeroThinking,
+    setAboutRotation,
     dispose,
     tick,
   }

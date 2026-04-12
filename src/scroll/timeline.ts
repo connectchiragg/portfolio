@@ -320,6 +320,7 @@ export function createTimeline(): MasterTimeline {
     const setHeroState = (): void => {
       heroExitDone = false // re-enable the exit tick for next scroll
       aboutActive = false
+      hologram.setReveal(0) // hide platform + grid
       lightsExt.setAboutLightLevel?.(0)
       lightsExt.setMailroomLightLevel?.(0)
       room.root.visible = true
@@ -369,12 +370,14 @@ export function createTimeline(): MasterTimeline {
       avatarExt.setShowContact?.(false)
       avatarExt.setHeroThinking?.(false)
       hologram.root.position.y = 0
+      hologram.setReveal(1) // show platform + grid
       // hologram.root.visible owned by wide-range about trigger.
       mailroom.visible = false
     }
 
     const setProjectsState = (): void => {
       aboutActive = false
+      hologram.setReveal(0) // hide platform + grid
       lightsExt.setAboutLightLevel?.(0)
       lightsExt.setMailroomLightLevel?.(0)
       room.root.visible = false
@@ -452,19 +455,23 @@ export function createTimeline(): MasterTimeline {
       }
     })
 
-    // Wardrobe scan-reveal — happens INSIDE the about section, on the
-    // shirt avatar standing on the platform (NOT during the hero exit).
-    // Starts only once setAboutState has fired (#about top hits viewport
-    // centre) and spans 700px of scroll so the scan is slow enough to
-    // read. The hero section stays pure jersey with zero shader effects.
+    // Scroll-driven laser ring — sweeps up the avatar as the user
+    // scrolls through the about section. Purely visual, doesn't
+    // change the outfit (outfit scan is rotation-driven in Hologram tick).
+    const holoExt = hologram as Hologram & { setLaserProgress?: (p: number) => void }
+    const scanPctEl = document.querySelector('#scan-pct') as HTMLElement | null
     triggers.push(
       ScrollTrigger.create({
         trigger: '#about',
-        start: 'top center',
-        end: '+=700',
+        start: 'top 70%',
+        end: 'top 10%',
         scrub: 1.2,
         onUpdate: (self) => {
-          hologram.setReveal(self.progress)
+          holoExt.setLaserProgress?.(self.progress)
+          // Update scan percentage readout
+          if (scanPctEl) {
+            scanPctEl.textContent = `${Math.round(self.progress * 100)}%`
+          }
         },
       }),
     )
@@ -479,7 +486,7 @@ export function createTimeline(): MasterTimeline {
     triggers.push(
       ScrollTrigger.create({
         trigger: '#about',
-        start: 'top bottom',
+        start: 'top 60%',
         end: 'bottom top',
         onEnter: () => {
           hologram.root.visible = true
