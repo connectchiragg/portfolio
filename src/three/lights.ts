@@ -77,9 +77,11 @@ export function createRoomLights(): RoomLights {
     0.45,
     1.2,
   )
-  mailroomKey.position.set(-3.0, 4.5, 18.5)
+  // Mailroom lights are parented inside the mailroom group so they move
+  // with the elevator. Positions are LOCAL to the mailroom group origin.
+  mailroomKey.position.set(-3.0, 4.5, 2.5)
   const mailroomKeyTarget = new Object3D()
-  mailroomKeyTarget.position.set(0, 0.8, 16)
+  mailroomKeyTarget.position.set(0, 0.8, 0)
   mailroomKey.target = mailroomKeyTarget
   mailroomKey.castShadow = true
   mailroomKey.shadow.mapSize.set(1024, 1024)
@@ -87,7 +89,7 @@ export function createRoomLights(): RoomLights {
   mailroomKey.shadow.radius = 4
 
   const mailroomFill = new PointLight('#f3a35e', 0, 14, 1.6)
-  mailroomFill.position.set(2.8, 1.8, 17.5)
+  mailroomFill.position.set(2.8, 1.8, 1.5)
 
   const mailroomRim = new SpotLight(
     '#ffe0b8',
@@ -97,9 +99,9 @@ export function createRoomLights(): RoomLights {
     0.5,
     1.4,
   )
-  mailroomRim.position.set(3.8, 3.2, 14.5)
+  mailroomRim.position.set(3.8, 3.2, -1.5)
   const mailroomRimTarget = new Object3D()
-  mailroomRimTarget.position.set(0, 1.2, 16.5)
+  mailroomRimTarget.position.set(0, 1.2, 0.5)
   mailroomRim.target = mailroomRimTarget
 
   // ─── About-section trio for the hologram platform (unchanged) ────────────
@@ -127,11 +129,8 @@ export function createRoomLights(): RoomLights {
     scene.add(moonlight)
     scene.add(sunrise)
     scene.add(hemi)
-    scene.add(mailroomKey)
-    scene.add(mailroomKeyTarget)
-    scene.add(mailroomFill)
-    scene.add(mailroomRim)
-    scene.add(mailroomRimTarget)
+    // Mailroom lights are NOT added to the scene — they're parented
+    // to the mailroom group in ThreeCanvas so they move with the elevator.
     scene.add(aboutKey)
     scene.add(aboutKeyTarget)
     scene.add(aboutRim)
@@ -179,8 +178,11 @@ export function createRoomLights(): RoomLights {
     setTimeOfDay,
     setAboutLightLevel,
     setMailroomLightLevel,
+    // Mailroom lights — parented to the mailroom group externally
+    mailroomLights: [mailroomKey, mailroomKeyTarget, mailroomFill, mailroomRim, mailroomRimTarget],
   } as RoomLights & {
     setAboutLightLevel: (v: number) => void
     setMailroomLightLevel: (v: number) => void
+    mailroomLights: import('three').Object3D[]
   }
 }

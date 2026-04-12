@@ -116,12 +116,19 @@ onMounted(async () => {
 
 
 
-  // Mailroom — built but parked far away until the timeline reveals it
+  // Mailroom — starts below camera, lifts into view with scroll (elevator).
+  // Avatar is parented inside the mailroom group so everything moves as one.
   const mr = buildMailroom()
-  mr.position.set(0, 0, 16)
+  mr.position.set(0, -6, 0)
   mr.visible = false
   scene.scene.add(mr)
   mailroom.value = mr
+
+  // Parent mailroom lights inside the mailroom group so they ride the elevator
+  const lightsExt = roomLights as typeof roomLights & { mailroomLights?: import('three').Object3D[] }
+  if (lightsExt.mailroomLights) {
+    for (const l of lightsExt.mailroomLights) mr.add(l)
+  }
 
   // ─── Phase 5: Polish layer ──────────────────────────────────────────────
   // Sakura petals were removed in Phase 7C+ per visual feedback (the

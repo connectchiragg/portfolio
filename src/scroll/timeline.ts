@@ -83,9 +83,10 @@ const PROJECTS_STOP: CameraStop = {
   pos: { x: 0, y: 1.6, z: 3.5 },
   look: { x: 0, y: 1.2, z: 0 },
 }
+// Contact uses the same camera as projects — the mailroom lifts into view
 const CONTACT_STOP: CameraStop = {
-  pos: { x: 0, y: 1.6, z: 19.5 },
-  look: { x: 0, y: 1.2, z: 16 },
+  pos: { x: 0, y: 1.6, z: 3.5 },
+  look: { x: 0, y: 1.2, z: 0 },
 }
 
 export function createTimeline(): MasterTimeline {
@@ -94,6 +95,7 @@ export function createTimeline(): MasterTimeline {
   let tickRemover: (() => void) | null = null
   let heroExitTickRemover: (() => void) | null = null
   let aboutElevatorTickRemover: (() => void) | null = null
+  let contactElevatorTickRemover: (() => void) | null = null
 
   const build = (deps: BuildDeps): void => {
     const { sceneCtx, room, avatar, hologram, lights, mailroom } = deps
@@ -330,6 +332,8 @@ export function createTimeline(): MasterTimeline {
       room.root.position.y = 0
       heroDisc.visible = true
       heroDisc.position.y = 0.005
+      // Re-parent avatar to scene root (may have been inside mailroom)
+      scene.add(avatar.root)
       avatar.root.visible = true
       // Hero pose: standing in front of a whiteboard, back to the camera.
       // The camera looks over his shoulder while he "studies the board".
@@ -365,6 +369,8 @@ export function createTimeline(): MasterTimeline {
       lightsExt.setMailroomLightLevel?.(0)
       room.root.visible = false
       heroDisc.visible = false
+      // Re-parent avatar to scene root (may have been inside mailroom)
+      scene.add(avatar.root)
       avatar.root.visible = true
       // Teleport the avatar onto the hologram platform (parked at z=8).
       avatar.root.position.set(0, 0.15, 8)
@@ -385,6 +391,8 @@ export function createTimeline(): MasterTimeline {
       lightsExt.setAboutLightLevel?.(0)
       lightsExt.setMailroomLightLevel?.(0)
       room.root.visible = false
+      // Re-parent avatar to scene root (may have been inside mailroom)
+      scene.add(avatar.root)
       // The four project cards cover the centre of the viewport in the
       // projects section, so an avatar parked at the desk reads as a
       // tiny silhouette peeking between cards (worse than not being
@@ -393,7 +401,9 @@ export function createTimeline(): MasterTimeline {
       avatarExt.setShowContact?.(false)
       avatarExt.setHeroThinking?.(false)
       // hologram.root.visible owned by wide-range about trigger.
-      mailroom.visible = false
+      // Pre-show mailroom so it's ready when the camera flies toward it
+      // during projectsToContact — avoids the pop.
+      mailroom.visible = true
       heroDisc.visible = false
     }
 
@@ -403,24 +413,14 @@ export function createTimeline(): MasterTimeline {
       lightsExt.setMailroomLightLevel?.(1)
       room.root.visible = false
       avatar.root.visible = true
-      // The contact section's HTML overlay scrims the LEFT half of the
-      // viewport for text legibility. Park the avatar at world x=+0.55
-      // so his outstretched left arm hovers directly over the football
-      // pedestal at mailroom local x=0.88. Matched to the empirical
-      // hand world position (~0.88, 1.30, 16.78) from earlier closeups.
-      avatar.root.position.set(0.55, 0, 16)
-      // The bundled contact-pose animation has the head turned ~25° toward
-      // the avatar's left. Counter-rotate the body by the same amount so
-      // the head squares back to the camera while his left arm naturally
-      // points toward camera-right where the lean-box is parked.
+      // Parent avatar inside the mailroom group so it lifts as one unit.
+      // Position is local to the mailroom group now.
+      mailroom.add(avatar.root)
+      avatar.root.position.set(0.55, 0, 0)
       avatar.root.rotation.set(0, -0.42, 0)
       avatar.play('standing')
-      // Snap-swap to the contact-only jersey mesh (different pose from
-      // the wardrobe-reveal jersey). The scan duo is hidden while this
-      // is active.
       avatarExt.setShowContact?.(true)
       avatarExt.setHeroThinking?.(false)
-      // hologram.root.visible owned by wide-range about trigger.
       mailroom.visible = true
       heroDisc.visible = false
     }
@@ -597,6 +597,31 @@ export function createTimeline(): MasterTimeline {
       }),
     )
 
+    // ─── Contact section elevator lift ────────────────────────────────────
+    // The mailroom group starts at y=-6 (below camera). As the #contact
+    // section scrolls into the viewport, the group lifts upward so it
+    // rises into view like an elevator floor arriving. Camera stays put.
+    {
+      const contactEl = document.querySelector('#contact') as HTMLElement
+      const MAILROOM_BASE_Y = -6
+
+      contactElevatorTickRemover = sceneCtx.onTick(() => {
+        if (!contactEl || !mailroom.visible) return
+        const rect = contactEl.getBoundingClientRect()
+        const vh = window.innerHeight
+        if (rect.bottom < 0 || rect.top > vh) return
+
+        // p = 0 when #contact top hits viewport bottom, 1 at viewport top
+        const p = Math.max(0, Math.min(1, 1 - rect.top / vh))
+
+        // Lift the mailroom group so it rises from below into the camera frame.
+        // Stop at y=0 so camera (y=1.6) sees the full room from the front.
+        const targetY = 0
+        const totalLift = targetY - MAILROOM_BASE_Y
+        mailroom.position.y = MAILROOM_BASE_Y + totalLift * p
+      })
+    }
+
     // Phase 7C++: force GSAP to apply the timeline's progress-0 state on
     // first paint (the tl.set above plus any tween from-states). Without
     // this the camera doesn't snap to HERO_STOP until the user scrolls
@@ -617,6 +642,10 @@ export function createTimeline(): MasterTimeline {
     if (aboutElevatorTickRemover) {
       aboutElevatorTickRemover()
       aboutElevatorTickRemover = null
+    }
+    if (contactElevatorTickRemover) {
+      contactElevatorTickRemover()
+      contactElevatorTickRemover = null
     }
     if (masterTl) {
       masterTl.kill()

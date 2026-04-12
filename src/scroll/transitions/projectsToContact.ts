@@ -1,13 +1,9 @@
 /**
- * projectsToContact — Master-timeline tweens for the third transition
- * (scroll ~0.50 → 0.75):
- *   - Camera slides from the projects stop to the contact stop (flies to
- *     the parked mailroom at z=16).
- *   - Background lerps cream-2 → tangerine dawn.
+ * projectsToContact — Master-timeline tweens for the third transition:
+ *   - Camera stays put (mailroom lifts into view via elevator tick).
+ *   - Background lerps to tangerine dawn.
  *   - Time-of-day lights lerp dim-warm → golden.
- *   - Mailroom becomes visible.
- *
- * Owned by W8 (Phase 4 — Master timeline).
+ *   - Wardrobe reveal flips back to jersey.
  */
 
 import type gsap from 'gsap'
@@ -30,41 +26,13 @@ export interface ProjectsToContactDeps {
 
 export function buildProjectsToContact(
   tl: Timeline,
-  from: CameraStop,
-  to: CameraStop,
+  _from: CameraStop,
+  _to: CameraStop,
   deps: ProjectsToContactDeps,
   at: number,
   duration: number,
 ): void {
-  const { camera, scene, room, mailroom, lights, hologram, lookAt } = deps
-
-  tl.fromTo(
-    camera.position,
-    { x: from.pos.x, y: from.pos.y, z: from.pos.z, immediateRender: false },
-    {
-      x: to.pos.x,
-      y: to.pos.y,
-      z: to.pos.z,
-      ease: 'power2.inOut',
-      duration,
-      immediateRender: false,
-    },
-    at,
-  )
-
-  tl.fromTo(
-    lookAt,
-    { x: from.look.x, y: from.look.y, z: from.look.z, immediateRender: false },
-    {
-      x: to.look.x,
-      y: to.look.y,
-      z: to.look.z,
-      ease: 'power2.inOut',
-      duration,
-      immediateRender: false,
-    },
-    at,
-  )
+  const { scene, room, lights, hologram } = deps
 
   const bg = scene.background as Color
   const target = new Color('#ffb673')
@@ -93,9 +61,7 @@ export function buildProjectsToContact(
     at,
   )
 
-  // Phase 7C+: wardrobe reveal flips back from shirt (v=1) → jersey (v=0)
-  // as the camera flies into the mailroom. Smooth power3.inOut ease over
-  // the full segment matches the heroToAbout reveal feel.
+  // Wardrobe reveal flips back from shirt (v=1) → jersey (v=0)
   const reveal = { v: 1 }
   tl.to(
     reveal,
@@ -108,10 +74,6 @@ export function buildProjectsToContact(
     at,
   )
 
-  // Hide the room at the start of the fly so it doesn't trail behind the
-  // camera on its way to the mailroom (the room sits at z≈0 and stays in
-  // frame for the first half of the long camera travel to z=19.5).
+  // Hide the room at the start
   tl.call(() => { room.root.visible = false }, undefined, at)
-
-  void mailroom
 }
