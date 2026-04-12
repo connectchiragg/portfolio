@@ -31,6 +31,7 @@ import type {
 import type { Group, Object3D } from 'three'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const ready = ref(false)
 const ctx = shallowRef<SceneContext | null>(null)
 const lights = shallowRef<RoomLights | null>(null)
 const loader = shallowRef<Loader | null>(null)
@@ -197,6 +198,9 @@ onMounted(async () => {
     mailroom: mr,
   })
   timeline.value = tl
+
+  // Show canvas only after everything is initialized
+  requestAnimationFrame(() => { ready.value = true })
 })
 
 onBeforeUnmount(() => {
@@ -234,5 +238,5 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <canvas ref="canvasRef" class="three-canvas" />
+  <canvas ref="canvasRef" class="three-canvas" :style="{ opacity: ready ? 1 : 0, transition: 'opacity 1.2s ease-in' }" />
 </template>

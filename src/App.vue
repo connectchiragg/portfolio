@@ -14,19 +14,19 @@ const onFirstInteraction = () => {
   startAudio()
   document.removeEventListener('click', onFirstInteraction)
   document.removeEventListener('keydown', onFirstInteraction)
-  document.removeEventListener('scroll', onFirstInteraction)
+  document.removeEventListener('touchstart', onFirstInteraction)
 }
 
 onMounted(() => {
   document.addEventListener('click', onFirstInteraction)
   document.addEventListener('keydown', onFirstInteraction)
-  document.addEventListener('scroll', onFirstInteraction)
+  document.addEventListener('touchstart', onFirstInteraction)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', onFirstInteraction)
   document.removeEventListener('keydown', onFirstInteraction)
-  document.removeEventListener('scroll', onFirstInteraction)
+  document.removeEventListener('touchstart', onFirstInteraction)
   disposeAudio()
 })
 </script>

@@ -84,18 +84,6 @@ import { projects } from '../data/projects'
         </a>
       </div>
 
-      <div class="mt-24 border-t border-bone/10 pt-10 text-center">
-        <p class="font-mono text-[10px] uppercase tracking-[0.28em] text-ash">
-          More in the archive
-        </p>
-        <a
-          href="#contact"
-          class="mt-4 inline-flex items-center gap-3 font-display text-2xl font-medium text-bone transition hover:text-ember"
-        >
-          Have a brief? Let's talk
-          <span>→</span>
-        </a>
-      </div>
     </div>
   </section>
 </template>
