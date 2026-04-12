@@ -192,31 +192,51 @@ function makeWhiteboardTexture(): CanvasTexture {
   canvas.height = 720
   const ctx = canvas.getContext('2d')!
 
+  // White background with subtle smudge marks
   ctx.fillStyle = '#f4f3ee'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-  ctx.fillStyle = 'rgba(180, 180, 180, 0.05)'
-  for (let i = 0; i < 30; i++) {
-    ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 60, 1)
+  ctx.fillStyle = 'rgba(180, 180, 180, 0.04)'
+  for (let i = 0; i < 20; i++) {
+    ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 80, 1)
   }
 
-  ctx.fillStyle = '#1c2552'
-  ctx.font = 'bold 56px sans-serif'
-  ctx.fillText('SYSTEM DESIGN', 60, 90)
+  // Messy handwriting fonts (system fonts available on macOS/Windows)
+  const hf = '"Marker Felt", "Comic Sans MS", "Bradley Hand", "Segoe Script", cursive'
+  const hand = `26px ${hf}`
+  const handBold = `bold 28px ${hf}`
+  const handTitle = `bold 48px ${hf}`
+  const handSmall = `22px ${hf}`
 
-  ctx.strokeStyle = '#1c2552'
-  ctx.lineWidth = 4
+  // Title — underlined
+  ctx.fillStyle = '#1a1a6e'
+  ctx.font = handTitle
+  ctx.fillText('Agentic Workflows', 60, 80)
+  ctx.strokeStyle = '#1a1a6e'
+  ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.moveTo(60, 110)
-  ctx.lineTo(540, 110)
+  ctx.moveTo(60, 95)
+  ctx.lineTo(520, 95)
   ctx.stroke()
 
-  const drawBox = (x: number, y: number, w: number, h: number, label: string, color: string) => {
+  // Handwritten boxes with rounded corners for agents
+  const drawRoundBox = (x: number, y: number, w: number, h: number, label: string, color: string) => {
     ctx.strokeStyle = color
-    ctx.lineWidth = 4
-    ctx.strokeRect(x, y, w, h)
+    ctx.lineWidth = 3
+    const r = 12
+    ctx.beginPath()
+    ctx.moveTo(x + r, y)
+    ctx.lineTo(x + w - r, y)
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+    ctx.lineTo(x + w, y + h - r)
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+    ctx.lineTo(x + r, y + h)
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+    ctx.lineTo(x, y + r)
+    ctx.quadraticCurveTo(x, y, x + r, y)
+    ctx.closePath()
+    ctx.stroke()
     ctx.fillStyle = color
-    ctx.font = 'bold 28px sans-serif'
+    ctx.font = handBold
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(label, x + w / 2, y + h / 2)
@@ -224,54 +244,65 @@ function makeWhiteboardTexture(): CanvasTexture {
     ctx.textBaseline = 'alphabetic'
   }
 
-  drawBox(80, 180, 220, 110, 'CLIENT', '#2563eb')
-  drawBox(400, 180, 220, 110, 'API', '#dc2626')
-  drawBox(720, 180, 220, 110, 'DB', '#16a34a')
+  // Agent flow diagram
+  drawRoundBox(60, 140, 180, 80, 'Orchestrator', '#6d28d9')
+  drawRoundBox(340, 130, 160, 65, 'Planner', '#2563eb')
+  drawRoundBox(340, 220, 160, 65, 'Executor', '#dc2626')
+  drawRoundBox(600, 140, 180, 80, 'Tools', '#16a34a')
+  drawRoundBox(600, 260, 180, 70, 'Memory', '#d97706')
 
-  ctx.strokeStyle = '#444'
-  ctx.lineWidth = 3
-  const drawArrow = (x1: number, y: number, x2: number) => {
+  // Wavy hand-drawn arrows
+  ctx.strokeStyle = '#555'
+  ctx.lineWidth = 2
+  const wavyArrow = (x1: number, y1: number, x2: number, y2: number) => {
     ctx.beginPath()
-    ctx.moveTo(x1, y)
-    ctx.lineTo(x2, y)
+    ctx.moveTo(x1, y1)
+    const mx = (x1 + x2) / 2
+    const my = (y1 + y2) / 2
+    ctx.quadraticCurveTo(mx, my - 8, x2, y2)
     ctx.stroke()
+    // arrowhead
+    const angle = Math.atan2(y2 - my, x2 - mx)
     ctx.beginPath()
-    ctx.moveTo(x2, y)
-    ctx.lineTo(x2 - 12, y - 8)
-    ctx.lineTo(x2 - 12, y + 8)
-    ctx.closePath()
-    ctx.fillStyle = '#444'
-    ctx.fill()
+    ctx.moveTo(x2, y2)
+    ctx.lineTo(x2 - 10 * Math.cos(angle - 0.4), y2 - 10 * Math.sin(angle - 0.4))
+    ctx.moveTo(x2, y2)
+    ctx.lineTo(x2 - 10 * Math.cos(angle + 0.4), y2 - 10 * Math.sin(angle + 0.4))
+    ctx.stroke()
   }
-  drawArrow(300, 235, 400)
-  drawArrow(620, 235, 720)
+  wavyArrow(240, 180, 340, 162)
+  wavyArrow(240, 180, 340, 252)
+  wavyArrow(500, 162, 600, 175)
+  wavyArrow(500, 252, 600, 290)
+  wavyArrow(690, 220, 690, 260)
 
-  ctx.fillStyle = '#333'
-  ctx.font = '24px sans-serif'
-  ctx.fillText('• caching layer (redis)', 80, 370)
-  ctx.fillText('• rate limit @ edge', 80, 410)
-  ctx.fillText('• circuit breaker → fallback', 80, 450)
-  ctx.fillText('• observability: traces + metrics', 80, 490)
+  // Handwritten notes
+  ctx.fillStyle = '#444'
+  ctx.font = hand
+  ctx.fillText('• plan → decompose → delegate', 60, 370)
+  ctx.fillText('• tool use: search, code, browse', 60, 405)
+  ctx.fillText('• reflect → retry on failure', 60, 440)
+  ctx.fillText('• human-in-the-loop checkpoints', 60, 475)
 
+  // Side notes in different color
+  ctx.fillStyle = '#6d28d9'
+  ctx.font = handSmall
+  ctx.fillText('~ each agent = LLM + prompt + tools', 520, 380)
+  ctx.fillText('~ context window = working memory', 520, 415)
+  ctx.fillText('~ long-term memory → RAG / vector DB', 520, 450)
+
+  // Circled key insight
+  ctx.strokeStyle = '#dc2626'
+  ctx.lineWidth = 2
+  ctx.font = handBold
   ctx.fillStyle = '#dc2626'
-  ctx.font = 'bold 32px sans-serif'
-  ctx.fillText('TODO', 600, 370)
-  ctx.fillStyle = '#333'
-  ctx.font = '24px sans-serif'
-  ctx.fillText('☐ schema migration', 600, 410)
-  ctx.fillText('☐ load test', 600, 450)
-  ctx.fillText('☐ deploy preview', 600, 490)
-  ctx.fillText('☑ doc update', 600, 530)
+  ctx.fillText('key: autonomy + guardrails!', 200, 550)
+  // Rough underline
+  ctx.beginPath()
+  ctx.moveTo(195, 558)
+  ctx.quadraticCurveTo(350, 565, 530, 556)
+  ctx.stroke()
 
-  ctx.strokeStyle = '#2563eb'
-  ctx.lineWidth = 3
-  ctx.beginPath()
-  ctx.arc(900, 600, 50, 0, Math.PI * 2)
-  ctx.stroke()
-  ctx.beginPath()
-  ctx.moveTo(870, 600)
-  ctx.bezierCurveTo(880, 580, 920, 580, 930, 600)
-  ctx.stroke()
 
   const tex = new CanvasTexture(canvas)
   tex.colorSpace = SRGBColorSpace
@@ -296,8 +327,8 @@ function buildWhiteboard(): Group {
   board.receiveShadow = true
   group.add(board)
 
-  const tray = shadowed(new Mesh(new BoxGeometry(2.2, 0.05, 0.12), std('#888888', 0.4, 0.6)))
-  tray.position.set(0, -0.92, 0.06)
+  const tray = shadowed(new Mesh(new BoxGeometry(2.3, 0.05, 0.12), std('#888888', 0.4, 0.6)))
+  tray.position.set(0, -0.82, 0.06)
   group.add(tray)
 
   return group

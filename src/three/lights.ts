@@ -29,7 +29,7 @@ const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v)
 
 export function createRoomLights(): RoomLights {
   // ─── Key: desk lamp as SpotLight — cone of light from bulb onto desk ─────
-  const deskLamp = new SpotLight('#ffb86b', 12, 6, Math.PI / 3, 0.5, 1.4)
+  const deskLamp = new SpotLight('#ffb86b', 16, 6, Math.PI / 3, 0.5, 1.4)
   // Bulb tip position (lamp base at 0.50, 0.70, 0.68 + lamp is 0.45m tall)
   deskLamp.position.set(0.50, 1.10, 0.60)
   // Aim at the desk surface center
@@ -42,7 +42,7 @@ export function createRoomLights(): RoomLights {
   deskLamp.shadow.radius = 4
 
   // ─── Fill: faint moonlight through the window (barely visible) ───────────
-  const moonlight = new DirectionalLight('#7a9eff', 0.15)
+  const moonlight = new DirectionalLight('#7a9eff', 0.8)
   moonlight.position.set(-4, 4.5, -3)
   moonlight.castShadow = true
   moonlight.shadow.mapSize.set(512, 512)
@@ -61,7 +61,7 @@ export function createRoomLights(): RoomLights {
   sunrise.position.set(4, 3, 2)
 
   // ─── Bounce: very dim hemisphere so shadows aren't pitch black ───────────
-  const hemi = new HemisphereLight('#1f2a4a', '#0a0807', 0.06)
+  const hemi = new HemisphereLight('#1f2a4a', '#0a0807', 0.35)
 
   // ─── Mailroom contact-section trio ───────────────────────────────────────
   // The mailroom is parked at z≈16, far from the hero room lights, and
@@ -145,10 +145,10 @@ export function createRoomLights(): RoomLights {
   // first sunlight (lamp clicked off, sunrise key, hemi opens up).
   const setTimeOfDay = (t: number): void => {
     const k = clamp01(t)
-    deskLamp.intensity = lerp(12, 0, k)
-    moonlight.intensity = lerp(0.15, 0.05, k)
+    deskLamp.intensity = lerp(16, 0, k)
+    moonlight.intensity = lerp(0.8, 0.05, k)
     sunrise.intensity = lerp(0, 2.0, k)
-    hemi.intensity = lerp(0.06, 0.55, k)
+    hemi.intensity = lerp(0.35, 0.55, k)
   }
 
   const setAboutLightLevel = (v: number): void => {
