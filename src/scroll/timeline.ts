@@ -536,9 +536,12 @@ export function createTimeline(): MasterTimeline {
         if (rect.bottom < 0 || rect.top > vh) return
 
         if (rect.top >= 0) {
-          // About section is still entering — objects stay at base
+          // About section is entering or re-entering (scroll-back) —
+          // objects at base position, ensure visible
           avatar.root.position.y = 0
           hologram.root.position.y = 0
+          avatar.root.visible = true
+          hologram.root.visible = true
         } else {
           // About section scrolling past — lift objects up
           const worldPerPx = (2 * camToAvatar * Math.tan(fovRad / 2)) / vh
@@ -548,11 +551,16 @@ export function createTimeline(): MasterTimeline {
           avatar.root.position.y = lift
           hologram.root.position.y = lift
 
+          // Show/hide based on how far we've scrolled past
           const sectionH = aboutEl.offsetHeight
           const p = Math.max(0, Math.min(1, -rect.top / (sectionH - vh)))
           if (p >= 0.95) {
             avatar.root.visible = false
             hologram.root.visible = false
+          } else {
+            // Re-show on scroll-back (p drops below 0.95)
+            avatar.root.visible = true
+            hologram.root.visible = true
           }
         }
       })
