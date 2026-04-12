@@ -65,7 +65,7 @@ export function buildAboutToProjects(
   )
 
   const bg = scene.background as Color
-  const target = new Color('#ffe8cc')
+  const target = new Color('#0a0a0a')
   tl.to(
     bg,
     {

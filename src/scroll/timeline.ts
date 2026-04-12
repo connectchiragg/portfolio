@@ -18,6 +18,7 @@
  */
 
 import gsap from 'gsap'
+import { fadeToAbout, fadeToWarm } from '../audio/sounds'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import {
   Color,
@@ -321,6 +322,7 @@ export function createTimeline(): MasterTimeline {
       heroExitDone = false // re-enable the exit tick for next scroll
       aboutActive = false
       hologram.setReveal(0) // hide platform + grid
+      fadeToWarm()
       lightsExt.setAboutLightLevel?.(0)
       lightsExt.setMailroomLightLevel?.(0)
       room.root.visible = true
@@ -358,6 +360,7 @@ export function createTimeline(): MasterTimeline {
       // Stop the hero exit tick from touching the avatar — about owns it now
       heroExitDone = true
       aboutActive = true
+      fadeToAbout()
       lightsExt.setAboutLightLevel?.(1)
       lightsExt.setMailroomLightLevel?.(0)
       room.root.visible = false
@@ -378,6 +381,7 @@ export function createTimeline(): MasterTimeline {
     const setProjectsState = (): void => {
       aboutActive = false
       hologram.setReveal(0) // hide platform + grid
+      fadeToWarm()
       lightsExt.setAboutLightLevel?.(0)
       lightsExt.setMailroomLightLevel?.(0)
       room.root.visible = false
@@ -559,7 +563,7 @@ export function createTimeline(): MasterTimeline {
           // Show/hide based on how far we've scrolled past
           const sectionH = aboutEl.offsetHeight
           const p = Math.max(0, Math.min(1, -rect.top / (sectionH - vh)))
-          if (p >= 0.95) {
+          if (p >= 0.99) {
             avatar.root.visible = false
             hologram.root.visible = false
           } else {

@@ -61,7 +61,7 @@ function createHologramMaterial(): ShaderMaterial {
 function buildTronGrid(): { mesh: Mesh; material: ShaderMaterial } {
   // GLSL shader-based grid — pixel-perfect sharp lines with smooth
   // analytic glow at any zoom level. No texture resolution limit.
-  const size = 12
+  const size = 8
   const geo = new CircleGeometry(size / 2, 64)
 
   const gridVert = `

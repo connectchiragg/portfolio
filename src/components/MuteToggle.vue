@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { toggleMute, isMuted } from '../audio/sounds'
 
-const muted = ref(false)
+const muted = ref(isMuted())
 
-onMounted(() => {
-  muted.value = localStorage.getItem('muted') === 'true'
-})
-
-const emit = defineEmits<{ (e: 'change', muted: boolean): void }>()
-
-function toggle() {
-  muted.value = !muted.value
-  localStorage.setItem('muted', String(muted.value))
-  emit('change', muted.value)
+const toggle = () => {
+  muted.value = toggleMute()
 }
 </script>
 
 <template>
   <button
-    type="button"
     @click="toggle"
+    class="flex h-10 w-10 items-center justify-center rounded-full border border-bone/20 text-bone/70 transition hover:border-bone/40 hover:text-bone"
     :aria-label="muted ? 'Unmute' : 'Mute'"
-    class="grid h-11 w-11 place-items-center border border-bone/30 bg-char/70 text-bone/80 backdrop-blur transition hover:border-ember hover:text-ember"
   >
-    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path v-if="!muted" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M19.071 4.929a10 10 0 010 14.142M9 9H5a1 1 0 00-1 1v4a1 1 0 001 1h4l5 4V5L9 9z" />
-      <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9H5a1 1 0 00-1 1v4a1 1 0 001 1h4l5 4V5L9 9zM17 9l4 4m0-4l-4 4" />
+    <!-- Speaker icon -->
+    <svg v-if="!muted" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    </svg>
+    <!-- Muted icon -->
+    <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <line x1="23" y1="9" x2="17" y2="15" />
+      <line x1="17" y1="9" x2="23" y2="15" />
     </svg>
   </button>
 </template>

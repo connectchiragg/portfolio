@@ -12,7 +12,6 @@ import { createTimeline } from '../scroll/timeline'
 import { createComposer } from '../three/effects/composer'
 import { createGodRays } from '../three/effects/godRays'
 import { mountCustomCursor } from '../three/effects/customCursor'
-import { createAudio } from '../audio/sounds'
 import { mountEasterEggs } from '../three/easter-eggs'
 import { mountMouseParallax } from '../utils/parallax'
 import { detectGpuTier } from '../utils/gpu'
@@ -73,14 +72,32 @@ onMounted(async () => {
   room.value = loadedRoom
   avatar.value = loadedAvatar
 
+  loadedRoom.root.visible = false
   scene.scene.add(loadedRoom.root)
+  requestAnimationFrame(() => {
+    loadedRoom.root.visible = true
+  })
 
   // Mount the avatar at the chair position (hero scene). Parent to the
   // scene root, NOT room.root, so room.root.visible toggles don't drag the
   // avatar with them.
   loadedAvatar.root.position.set(0.55, 0, -1.2)
   loadedAvatar.play('sitting')
+  // Hide until the mixer has ticked and applied the pose (avoids T-pose flash).
+  // Force a mixer update at dt=0 to snap to the first frame immediately.
+  loadedAvatar.root.visible = false
   scene.scene.add(loadedAvatar.root)
+  if (loadedAvatar.tick) loadedAvatar.tick(0, 0)
+  // Wait a few frames for the GPU to process the skinned mesh update
+  let showCountdown = 3
+  const showCheck = () => {
+    if (--showCountdown <= 0) {
+      loadedAvatar.root.visible = true
+    } else {
+      requestAnimationFrame(showCheck)
+    }
+  }
+  requestAnimationFrame(showCheck)
 
   // Hologram FX layer — platform + grid only, no avatar inside. Material
   // swap on the avatar happens in-place via the setReveal API.
@@ -136,19 +153,7 @@ onMounted(async () => {
     if (canvasRef.value) ro.observe(canvasRef.value)
   }
 
-  // Audio
-  const aud = createAudio()
-  audio.value = aud
-  // Begin on first user interaction (browsers block autoplay)
-  const beginAudio = (): void => {
-    void aud.begin()
-    // Tap the analyser into the hologram so it pulses to bass
-    holo.bindAnalyser(aud.getAnalyser())
-    window.removeEventListener('pointerdown', beginAudio)
-    window.removeEventListener('keydown', beginAudio)
-  }
-  window.addEventListener('pointerdown', beginAudio, { once: true })
-  window.addEventListener('keydown', beginAudio, { once: true })
+  // Audio is handled by App.vue via src/audio/sounds.ts
 
   // Custom DOM cursor
   cursor.value = mountCustomCursor()
@@ -164,7 +169,7 @@ onMounted(async () => {
       room: loadedRoom,
       avatar: loadedAvatar,
       lights: roomLights,
-      audio: aud,
+      audio: null as unknown as AudioController,
       domElement: canvasRef.value,
     })
   }

@@ -10,8 +10,8 @@ import { projects } from '../data/projects'
   -->
   <section
     id="projects"
-    class="relative isolate overflow-hidden py-36"
-    style="background: linear-gradient(to bottom, rgba(10,8,7,0.78) 0%, rgba(10,8,7,0.86) 50%, rgba(10,8,7,0.78) 100%);"
+    class="relative isolate overflow-hidden pt-4 pb-36"
+    style="background: linear-gradient(to bottom, rgba(10,8,7,1) 0%, rgba(10,8,7,0.95) 50%, rgba(10,8,7,1) 100%);"
   >
     <div class="relative mx-auto max-w-6xl px-6">
       <div class="mb-20 flex flex-wrap items-end justify-between gap-6">
