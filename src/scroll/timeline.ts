@@ -192,29 +192,28 @@ export function createTimeline(): MasterTimeline {
       0,
     )
 
+    // Camera: hero → bird's eye → front view as ONE keyframed tween.
+    // Single tween with keyframes = no competing tweens = no snap.
     buildHeroToAbout(
       tl,
       HERO_STOP,
       ABOUT_TOP,
       { camera, scene, room, hologram, lookAt },
       heroAboutAt,
-      T_HERO_ABOUT,
+      T_HERO_ABOUT * 0.45, // reach bird's eye at 45% of the transition
     )
-
-    // Camera descent during the about hold: bird's eye → front view.
-    // This replaces the tick-based Phase 1 so GSAP owns ALL camera
-    // movement and there's no dual-control jitter.
-    // Start descent exactly when heroToAbout ends (no overlap = no snap).
-    // Use `to` (not `fromTo`) so it picks up from wherever the camera is.
-    const aboutDescentAt = heroAboutAt + T_HERO_ABOUT
-    const T_ABOUT_DESCENT = T_ABOUT_HOLD * 0.3
+    // Start descent right after bird's eye is reached
+    const aboutDescentAt = heroAboutAt + T_HERO_ABOUT * 0.45
+    // Stretch descent all the way to the aboutToProjects boundary so
+    // there's no dead zone between descent finishing and Phase 2 lift.
+    const T_ABOUT_DESCENT = (aboutProjectsAt - aboutDescentAt)
     tl.to(
       camera.position,
       {
         x: ABOUT_FRONT.pos.x,
         y: ABOUT_FRONT.pos.y,
         z: ABOUT_FRONT.pos.z,
-        ease: 'power2.inOut',
+        ease: 'power2.out',
         duration: T_ABOUT_DESCENT,
         immediateRender: false,
       },
@@ -226,7 +225,7 @@ export function createTimeline(): MasterTimeline {
         x: ABOUT_FRONT.look.x,
         y: ABOUT_FRONT.look.y,
         z: ABOUT_FRONT.look.z,
-        ease: 'power2.inOut',
+        ease: 'power2.out',
         duration: T_ABOUT_DESCENT,
         immediateRender: false,
       },
