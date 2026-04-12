@@ -65,11 +65,18 @@ const HERO_STOP: CameraStop = {
   pos: { x: 3.4, y: 2.0, z: 1.6 },
   look: { x: -0.8, y: 1.05, z: -0.4 },
 }
-const ABOUT_STOP: CameraStop = {
-  // Pulled back + tilted up so the avatar sits lower in frame: feet on
-  // the cyan platform at screen mid-bottom, head well clear of the nav.
-  pos: { x: 0, y: 2.1, z: 4.2 },
+// Bird's-eye: heroToAbout tween lands the camera here.
+// Camera elevated but look target at avatar chest height so the
+// avatar is centered in the bird's-eye view, not just the floor.
+const ABOUT_TOP: CameraStop = {
+  pos: { x: 0, y: 4.5, z: 5.0 },
   look: { x: 0, y: 1.5, z: 8 },
+}
+// Front/eye-level: elevator Phase 1 descends camera here.
+// Phase 2 lifts everything from here. Also used as aboutToProjects `from`.
+const ABOUT_FRONT: CameraStop = {
+  pos: { x: 0, y: 2.0, z: 4.0 },
+  look: { x: 0, y: 1.2, z: 8 },
 }
 const PROJECTS_STOP: CameraStop = {
   pos: { x: 0, y: 1.6, z: 3.5 },
@@ -84,6 +91,8 @@ export function createTimeline(): MasterTimeline {
   const triggers: ScrollTrigger[] = []
   let masterTl: gsap.core.Timeline | null = null
   let tickRemover: (() => void) | null = null
+  let heroExitTickRemover: (() => void) | null = null
+  let aboutElevatorTickRemover: (() => void) | null = null
 
   const build = (deps: BuildDeps): void => {
     const { sceneCtx, room, avatar, hologram, lights, mailroom } = deps
@@ -186,15 +195,47 @@ export function createTimeline(): MasterTimeline {
     buildHeroToAbout(
       tl,
       HERO_STOP,
-      ABOUT_STOP,
+      ABOUT_TOP,
       { camera, scene, room, hologram, lookAt },
       heroAboutAt,
       T_HERO_ABOUT,
     )
 
+    // Camera descent during the about hold: bird's eye → front view.
+    // This replaces the tick-based Phase 1 so GSAP owns ALL camera
+    // movement and there's no dual-control jitter.
+    const aboutDescentAt = heroAboutAt + T_HERO_ABOUT
+    const T_ABOUT_DESCENT = T_ABOUT_HOLD * 0.5 // first half of hold
+    tl.fromTo(
+      camera.position,
+      { x: ABOUT_TOP.pos.x, y: ABOUT_TOP.pos.y, z: ABOUT_TOP.pos.z, immediateRender: false },
+      {
+        x: ABOUT_FRONT.pos.x,
+        y: ABOUT_FRONT.pos.y,
+        z: ABOUT_FRONT.pos.z,
+        ease: 'power2.inOut',
+        duration: T_ABOUT_DESCENT,
+        immediateRender: false,
+      },
+      aboutDescentAt,
+    )
+    tl.fromTo(
+      lookAt,
+      { x: ABOUT_TOP.look.x, y: ABOUT_TOP.look.y, z: ABOUT_TOP.look.z, immediateRender: false },
+      {
+        x: ABOUT_FRONT.look.x,
+        y: ABOUT_FRONT.look.y,
+        z: ABOUT_FRONT.look.z,
+        ease: 'power2.inOut',
+        duration: T_ABOUT_DESCENT,
+        immediateRender: false,
+      },
+      aboutDescentAt,
+    )
+
     buildAboutToProjects(
       tl,
-      ABOUT_STOP,
+      ABOUT_FRONT,
       PROJECTS_STOP,
       { camera, scene, room, hologram, lights, lookAt },
       aboutProjectsAt,
@@ -274,12 +315,16 @@ export function createTimeline(): MasterTimeline {
       setMailroomLightLevel?: (v: number) => void
     }
 
+    let heroExitDone = false
+    let aboutActive = false
+
     const setHeroState = (): void => {
+      heroExitDone = false // re-enable the exit tick for next scroll
+      aboutActive = false
       lightsExt.setAboutLightLevel?.(0)
       lightsExt.setMailroomLightLevel?.(0)
       room.root.visible = true
-      // Restore room Y in case the about-sink scrub left it offscreen
-      // and the user landed on hero via direct nav.
+      // Restore room Y in case the exit lift left it offscreen
       room.root.position.y = 0
       heroDisc.visible = true
       heroDisc.position.y = 0.005
@@ -310,27 +355,28 @@ export function createTimeline(): MasterTimeline {
     //   contact   camera at z=19.5, avatar at z=16 → want +Z (toward camera) → rotation.y = 0
 
     const setAboutState = (): void => {
+      // Stop the hero exit tick from touching the avatar — about owns it now
+      heroExitDone = true
+      aboutActive = true
       lightsExt.setAboutLightLevel?.(1)
       lightsExt.setMailroomLightLevel?.(0)
       room.root.visible = false
-      // Avatar visibility is handled by the rise scrub trigger —
-      // don't make it visible here or the hero jersey model flashes
-      // in the blue zone before the teleport takes effect.
-      avatar.root.visible = false
+      heroDisc.visible = false
+      avatar.root.visible = true
       // Teleport the avatar onto the hologram platform (parked at z=8).
-      // Start below the camera view — the rise scrub trigger brings it up.
-      avatar.root.position.set(0, -0.8, 8)
+      avatar.root.position.set(0, 0, 8)
       // Face the camera for the wardrobe-reveal close-up.
       avatar.root.rotation.set(0, Math.PI, 0)
       avatar.play('standing')
       avatarExt.setShowContact?.(false)
       avatarExt.setHeroThinking?.(false)
+      hologram.root.position.y = 0
       // hologram.root.visible owned by wide-range about trigger.
       mailroom.visible = false
-      heroDisc.visible = false
     }
 
     const setProjectsState = (): void => {
+      aboutActive = false
       lightsExt.setAboutLightLevel?.(0)
       lightsExt.setMailroomLightLevel?.(0)
       room.root.visible = false
@@ -347,6 +393,7 @@ export function createTimeline(): MasterTimeline {
     }
 
     const setContactState = (): void => {
+      aboutActive = false
       lightsExt.setAboutLightLevel?.(0)
       lightsExt.setMailroomLightLevel?.(1)
       room.root.visible = false
@@ -379,37 +426,33 @@ export function createTimeline(): MasterTimeline {
     // wide-range trigger below).
     hologram.root.visible = false
 
-    // Hero exit: as #about scrolls in from the bottom:
-    //   - the SETUP (room + desk + whiteboard) sinks DOWN out of frame
-    //   - the AVATAR rises UP with the page content, his feet planted
-    //     on the cyan ground disc which lifts in lockstep
-    // Same scroll-up motion as the white-shirt avatar in #about, so the
-    // two transitions feel symmetric.
+    // Hero exit: the entire hero scene lifts UP in perfect sync with
+    // the page scroll. Uses a per-frame tick reading raw scroll
+    // position (bypassing Lenis smoothing lag) so the 3D scene
+    // moves at exactly the same rate as the HTML text.
     const roomBaseY = room.root.position.y
-    triggers.push(
-      ScrollTrigger.create({
-        trigger: '#about',
-        // Small delay: instead of starting at the very first pixel of
-        // scroll, wait until #about's top has climbed roughly 15% into
-        // the viewport before the hero begins exiting.
-        start: 'top 85%',
-        end: 'top 15%',
-        scrub: true,
-        onUpdate: (self) => {
-          const p = self.progress
-          // Hide room + hero props once the sink starts so they
-          // don't trail into the about section's blue zone.
-          if (p > 0.1) {
-            room.root.visible = false
-            heroDisc.visible = false
-            avatarExt.setHeroThinking?.(false)
-          }
-          // Sink the room down, avatar stays put (section state
-          // functions handle avatar teleport + visibility).
-          room.root.position.y = roomBaseY - 6 * p
-        },
-      }),
-    )
+    const aboutEl = document.querySelector('#about') as HTMLElement
+    const SCROLL_LIFT = 4.0
+    heroExitTickRemover = sceneCtx.onTick(() => {
+      if (!aboutEl || heroExitDone) return
+      const rect = aboutEl.getBoundingClientRect()
+      const vh = window.innerHeight
+      // p = 0 when #about top is at viewport bottom, 1 at viewport top
+      const p = Math.max(0, Math.min(1, 1 - rect.top / vh))
+      if (p <= 0) return // not started yet
+      const lift = SCROLL_LIFT * p
+      room.root.position.y = roomBaseY + lift
+      avatar.root.position.y = lift
+      heroDisc.position.y = 0.005 + lift
+      if (p >= 0.75) {
+        // Fully off-screen — hide and stop running
+        room.root.visible = false
+        avatar.root.visible = false
+        heroDisc.visible = false
+        avatarExt.setHeroThinking?.(false)
+        heroExitDone = true
+      }
+    })
 
     // Wardrobe scan-reveal — happens INSIDE the about section, on the
     // shirt avatar standing on the platform (NOT during the hero exit).
@@ -462,14 +505,6 @@ export function createTimeline(): MasterTimeline {
         end: 'bottom center',
         onEnter: setHeroState,
         onEnterBack: setHeroState,
-        onLeave: () => {
-          // Immediately hide the hero jersey avatar when leaving
-          // the hero section so it doesn't bleed into the about zone.
-          avatarExt.setHeroThinking?.(false)
-          avatar.root.visible = false
-          room.root.visible = false
-          heroDisc.visible = false
-        },
       }),
     )
 
@@ -484,36 +519,44 @@ export function createTimeline(): MasterTimeline {
       }),
     )
 
-    // Dedicated 1:1 scrub trigger so the avatar + hologram platform
-    // travel upward at the exact same rate as the #about HTML overlay.
-    // The master timeline's scrub:1.5 introduces ~1.5s of smoothing lag,
-    // which makes the 3D rig feel like it's chasing the text. A separate
-    // trigger with scrub:true removes that lag.
-    //
-    // Range: 'top center' (avatar fully visible, base y) → 'bottom center'
-    // (section leaving, avatar lifted out of frame). Tighter than the
-    // top-bottom→bottom-top window, so the rise tracks the section's
-    // visible scroll exactly instead of pre-rising before it's read.
-    const RISE_BASE_Y = -0.8
-    const RISE_TOP_Y = 2.4
-    triggers.push(
-      ScrollTrigger.create({
-        trigger: '#about',
-        start: 'top center',
-        end: 'bottom center',
-        scrub: true,
-        onUpdate: (self) => {
-          const y = RISE_BASE_Y + (RISE_TOP_Y - RISE_BASE_Y) * self.progress
-          avatar.root.position.y = y
-          // Make avatar visible once the rise has started (teleport done)
-          if (self.progress > 0.05) {
-            avatar.root.visible = true
+    // ─── About section object lift ──────────────────────────────────────
+    // GSAP owns all camera movement (hero→aboutTop→aboutFront→projects).
+    // This tick ONLY lifts the avatar + hologram objects upward once the
+    // about section starts scrolling past the viewport top, matching the
+    // HTML content scroll rate via worldPerPx conversion.
+    {
+      const fovRad = camera.fov * Math.PI / 180
+      const avatarZ = 8
+      const camToAvatar = avatarZ - ABOUT_FRONT.pos.z
+
+      aboutElevatorTickRemover = sceneCtx.onTick(() => {
+        if (!aboutEl || !heroExitDone) return
+        const rect = aboutEl.getBoundingClientRect()
+        const vh = window.innerHeight
+        if (rect.bottom < 0 || rect.top > vh) return
+
+        if (rect.top >= 0) {
+          // About section is still entering — objects stay at base
+          avatar.root.position.y = 0
+          hologram.root.position.y = 0
+        } else {
+          // About section scrolling past — lift objects up
+          const worldPerPx = (2 * camToAvatar * Math.tan(fovRad / 2)) / vh
+          const scrolledPx = -rect.top
+          const lift = scrolledPx * worldPerPx * 0.82
+
+          avatar.root.position.y = lift
+          hologram.root.position.y = lift
+
+          const sectionH = aboutEl.offsetHeight
+          const p = Math.max(0, Math.min(1, -rect.top / (sectionH - vh)))
+          if (p >= 0.95) {
+            avatar.root.visible = false
+            hologram.root.visible = false
           }
-          // Platform stays at the avatar's feet
-          hologram.root.position.y = y
-        },
-      }),
-    )
+        }
+      })
+    }
 
     triggers.push(
       ScrollTrigger.create({
@@ -549,6 +592,14 @@ export function createTimeline(): MasterTimeline {
     if (tickRemover) {
       tickRemover()
       tickRemover = null
+    }
+    if (heroExitTickRemover) {
+      heroExitTickRemover()
+      heroExitTickRemover = null
+    }
+    if (aboutElevatorTickRemover) {
+      aboutElevatorTickRemover()
+      aboutElevatorTickRemover = null
     }
     if (masterTl) {
       masterTl.kill()

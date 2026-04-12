@@ -11,7 +11,7 @@ const firstName = profile.name.split(' ')[0] ?? profile.name
   -->
   <section
     id="about"
-    class="relative isolate overflow-hidden py-36 text-bone"
+    class="relative isolate overflow-hidden pt-36 pb-[120vh] text-bone"
     style="background: linear-gradient(to bottom, rgba(6,10,38,0.55) 0%, rgba(6,10,38,0.45) 50%, rgba(6,10,38,0.55) 100%);"
   >
     <div class="relative mx-auto max-w-6xl px-6">
