@@ -139,17 +139,8 @@ export declare function createHologram(avatar: Avatar): Hologram
 
 export interface RoomProps {
   desk: Object3D
-  laptop: Object3D
-  chair: Object3D
   mug: Object3D
-  headphones: Object3D
-  lamp: Object3D
   football: Object3D
-  strawHat: Object3D
-  mangaStack: Object3D
-  crtTv: Object3D
-  succulent: Object3D
-  corkboard: Object3D
 }
 
 export interface Room {

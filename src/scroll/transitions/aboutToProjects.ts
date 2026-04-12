@@ -38,26 +38,28 @@ export function buildAboutToProjects(
 
   tl.fromTo(
     camera.position,
-    { x: from.pos.x, y: from.pos.y, z: from.pos.z },
+    { x: from.pos.x, y: from.pos.y, z: from.pos.z, immediateRender: false },
     {
       x: to.pos.x,
       y: to.pos.y,
       z: to.pos.z,
       ease: 'power2.inOut',
       duration,
+      immediateRender: false,
     },
     at,
   )
 
   tl.fromTo(
     lookAt,
-    { x: from.look.x, y: from.look.y, z: from.look.z },
+    { x: from.look.x, y: from.look.y, z: from.look.z, immediateRender: false },
     {
       x: to.look.x,
       y: to.look.y,
       z: to.look.z,
       ease: 'power2.inOut',
       duration,
+      immediateRender: false,
     },
     at,
   )

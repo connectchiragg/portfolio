@@ -10,22 +10,38 @@
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* Cream / warm — hero, projects, contact, footer */
-  --color-cream: #fff5e9;
-  --color-cream-2: #ffe8cc;
-  --color-ink: #14110f;
+  /*
+   * "Late Night, Bengaluru" — cinematic noir palette.
+   * Graphite blacks, tungsten amber, moonlit steel. Editorial, not playful.
+   */
 
-  /* Vibrant accents */
-  --color-grape: #6b2bd9;
-  --color-magenta: #ff2e93;
-  --color-tangerine: #ff7a1a;
-  --color-lemon: #ffd23f;
-  --color-mint: #2bd9a3;
+  /* Backdrops */
+  --color-char:     #0a0807; /* deepest — page base */
+  --color-graphite: #14110f; /* card surface */
+  --color-carbon:   #1f1a16; /* hover surface / borders */
 
-  /* Deep / hologram — about section */
-  --color-deep: #060a26;
-  --color-deep-2: #0d1240;
-  --color-cyan: #4ad8ff;
+  /* Typography on dark */
+  --color-bone:  #e9e2d4; /* primary text on dark */
+  --color-ash:   #a39788; /* secondary text */
+  --color-mute:  #635a4f; /* tertiary, captions */
+
+  /* Single warm accent — desk-lamp tungsten */
+  --color-ember:    #d97a3a;
+  --color-ember-2:  #f3a35e;
+
+  /* Single cool accent — moonlight */
+  --color-moon:     #6f8aa6;
+
+  /* Hologram cyan — about section only */
+  --color-cyan:    #4ad8ff;
+  --color-deep:    #060a26;
+  --color-deep-2:  #0d1240;
+
+  /* Legacy aliases — kept so primitive 3D code that imports these still
+     compiles. Components should prefer the noir tokens above. */
+  --color-cream:   #e9e2d4;
+  --color-cream-2: #1f1a16;
+  --color-ink:     #0a0807;
 
   /* Argentina jersey colours (used by the avatar re-texture step) */
   --color-arg-blue: #75aadb;
@@ -40,10 +56,31 @@ body {
    * draw their own scoped backgrounds where needed for legibility.
    */
   background: transparent;
-  color: var(--color-ink);
+  color: var(--color-bone);
   font-family: var(--font-display);
   scroll-behavior: smooth;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Editorial section eyebrow — small mono label used across sections */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-ash);
+}
+.eyebrow .num { color: var(--color-ember); }
+
+/* Hairline rule */
+.hair {
+  display: inline-block;
+  width: 2.25rem;
+  height: 1px;
+  background: currentColor;
+  vertical-align: middle;
+  opacity: 0.5;
 }
 
 /* Persistent canvas — sits behind all HTML overlays */

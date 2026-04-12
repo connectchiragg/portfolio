@@ -30,10 +30,12 @@ export interface ParallaxHandle {
  */
 export function mountMouseParallax(camera: PerspectiveCamera): ParallaxHandle {
   // Target normalised device coords — (-1..1, -1..1). Centred at rest.
+  // Phase 7C++: kept at 0 so the parallax doesn't bias every section's
+  // composition. The hero "sideways" feel is baked directly into
+  // HERO_STOP in timeline.ts, not via a parallax offset.
   let targetX = 0
   let targetY = 0
 
-  // Current smoothed offsets in radians.
   let currentX = 0
   let currentY = 0
 

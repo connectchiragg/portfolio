@@ -78,7 +78,7 @@ onMounted(async () => {
   // Mount the avatar at the chair position (hero scene). Parent to the
   // scene root, NOT room.root, so room.root.visible toggles don't drag the
   // avatar with them.
-  loadedAvatar.root.position.set(0, 0, -0.6)
+  loadedAvatar.root.position.set(0.55, 0, -1.2)
   loadedAvatar.play('sitting')
   scene.scene.add(loadedAvatar.root)
 
@@ -90,6 +90,10 @@ onMounted(async () => {
   holo.root.position.set(0, 0, 8) // parked behind the back wall
   scene.scene.add(holo.root)
   hologram.value = holo
+
+  // DEBUG: temporary global to verify camera position
+  ;(window as unknown as Record<string, unknown>).__camera = scene.camera
+  ;(window as unknown as Record<string, unknown>).__avatar = loadedAvatar
 
 
 
@@ -169,6 +173,8 @@ onMounted(async () => {
     loadedAvatar.tick?.(dt, elapsed)
     holo.tick?.(dt, elapsed)
     px.tick(dt)
+    const mailroomTick = (mr.userData?.tick as ((dt: number) => void) | undefined)
+    mailroomTick?.(dt)
   })
 
   // Scroll + master timeline (Phase 4)

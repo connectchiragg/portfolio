@@ -5,35 +5,29 @@ const year = new Date().getFullYear()
 </script>
 
 <template>
-  <footer class="relative z-10 py-10" style="background: rgba(255, 245, 233, 0.85);">
+  <footer class="relative z-10 py-12" style="background: rgba(10,8,7,0.92);">
     <div
-      class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row"
+      class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-6 sm:flex-row"
     >
       <a
         href="#top"
-        class="grid h-12 w-12 place-items-center rounded-full bg-white text-ink shadow-md ring-1 ring-black/10 transition hover:-translate-y-1"
+        class="grid h-11 w-11 place-items-center border border-bone/20 text-bone/70 transition hover:-translate-y-0.5 hover:border-ember hover:text-ember"
         aria-label="Back to top"
       >
         ↑
       </a>
       <div
-        class="flex items-center gap-5 font-mono text-xs uppercase tracking-wider text-ink/60"
+        class="flex items-center gap-6 font-mono text-[10px] uppercase tracking-[0.24em] text-ash"
       >
-        <a href="#" class="hover:text-ink">Privacy</a>
-        <a href="#" class="hover:text-ink">Legal</a>
-        <button
-          type="button"
-          class="rounded-full border border-ink/20 px-3 py-1 hover:border-ink"
-        >
-          EN
-        </button>
+        <a href="#" class="hover:text-bone">Privacy</a>
+        <span class="opacity-30">·</span>
+        <a href="#" class="hover:text-bone">Legal</a>
+        <span class="opacity-30">·</span>
+        <span>Built between innings</span>
       </div>
-      <div class="text-right">
-        <p class="font-mono text-xs text-ink/60">© {{ year }} {{ profile.name }}</p>
-        <p class="mt-1 font-mono text-[10px] italic text-ink/40">
-          Built between innings
-        </p>
-      </div>
+      <p class="font-mono text-[10px] uppercase tracking-[0.24em] text-ash">
+        © {{ year }} {{ profile.name }}
+      </p>
     </div>
   </footer>
 </template>

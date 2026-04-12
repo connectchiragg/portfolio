@@ -9,9 +9,9 @@ import {
   WebGLRenderer,
   Scene,
   PerspectiveCamera,
-  ACESFilmicToneMapping,
+  CineonToneMapping,
   SRGBColorSpace,
-  PCFShadowMap,
+  PCFSoftShadowMap,
   Mesh,
 } from 'three'
 import type { Material, BufferGeometry } from 'three'
@@ -28,10 +28,12 @@ export function createScene(opts: SceneOptions): SceneContext {
     powerPreference: 'high-performance',
   })
   renderer.outputColorSpace = SRGBColorSpace
-  renderer.toneMapping = ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.0
+  // Cineon tone-mapping reads more cinematic than ACES on dark scenes — it
+  // keeps tungsten highlights warm without crushing the black backdrops.
+  renderer.toneMapping = CineonToneMapping
+  renderer.toneMappingExposure = 1.15
   renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = PCFShadowMap
+  renderer.shadowMap.type = PCFSoftShadowMap
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatio ?? 2))
 
   const scene = new Scene()

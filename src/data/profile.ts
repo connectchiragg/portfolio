@@ -23,7 +23,7 @@ export const profile: Profile = {
   role: 'Full‑Stack Developer',
   location: 'Bengaluru, India',
   available: true,
-  bio: 'Designs and builds full‑stack web products end‑to‑end. Loves shipping fast, refactoring later, and making the boring parts feel fun.',
+  bio: 'Designs and builds full‑stack web products end to end. Comfortable in databases, on the canvas, and at 2am with a half‑empty mug.',
   skills: [
     'TypeScript & Node.js',
     'Vue, Nuxt, Astro',

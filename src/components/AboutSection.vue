@@ -6,93 +6,82 @@ const firstName = profile.name.split(' ')[0] ?? profile.name
 
 <template>
   <!--
-    Section background is a soft dark wash that lets the 3D hologram in
-    the centre of the canvas show through. The cyan callout cards on the
-    left and right are positioned over the canvas; the centre column is
-    intentionally empty so the hologram is fully visible.
+    The hologram fills the centre. We sit two narrow callouts on the
+    flanks — graphite cards with cyan hairlines, no rounded blobs.
   -->
   <section
     id="about"
-    class="relative isolate overflow-hidden py-32 text-cream"
-    style="background: linear-gradient(to bottom, rgba(6, 10, 38, 0.55) 0%, rgba(6, 10, 38, 0.45) 50%, rgba(6, 10, 38, 0.55) 100%);"
+    class="relative isolate overflow-hidden py-36 text-bone"
+    style="background: linear-gradient(to bottom, rgba(6,10,38,0.55) 0%, rgba(6,10,38,0.45) 50%, rgba(6,10,38,0.55) 100%);"
   >
     <div class="relative mx-auto max-w-6xl px-6">
-      <div class="mb-16 flex items-end justify-between">
+      <div class="mb-20 flex items-end justify-between">
         <div>
-          <p
-            class="mb-4 inline-block rounded-full bg-cyan/15 px-3 py-1 font-mono text-xs font-bold uppercase tracking-widest text-cyan ring-1 ring-cyan/30 backdrop-blur"
-          >
-            // 01 — about
+          <p class="eyebrow mb-5 flex items-center gap-3">
+            <span class="hair" style="color: var(--color-cyan);" />
+            <span class="num" style="color: var(--color-cyan);">N° 01</span>
+            <span>The Subject</span>
           </p>
-          <h2 class="font-display text-5xl font-black tracking-tight sm:text-6xl drop-shadow-lg">
-            Identified
+          <h2
+            class="font-display text-5xl font-medium tracking-[-0.02em] sm:text-7xl"
+          >
+            Identified.
           </h2>
         </div>
         <div
-          class="hidden font-mono text-xs uppercase tracking-widest text-cyan/70 sm:block"
+          class="hidden font-mono text-[10px] uppercase tracking-[0.28em] text-cyan/70 sm:block"
         >
-          SCAN COMPLETE · 100%
+          ◇ Scan complete · 100%
         </div>
       </div>
 
-      <div class="grid items-center gap-12 lg:grid-cols-12">
+      <div class="grid items-start gap-10 lg:grid-cols-12">
         <!-- left callouts -->
         <div class="space-y-6 lg:col-span-4">
           <div
-            class="rounded-2xl border border-cyan/30 bg-deep/60 p-5 font-mono shadow-xl shadow-cyan/5 backdrop-blur"
+            class="border border-cyan/25 bg-char/55 p-6 font-mono backdrop-blur-sm"
           >
-            <p class="text-2xl font-bold text-cream">{{ firstName }}</p>
-            <p class="mt-1 flex items-center gap-1 text-xs text-cyan/80">
-              <svg
-                class="h-3 w-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <circle
-                  cx="12"
-                  cy="11"
-                  r="3"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                />
-              </svg>
+            <p class="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan/70">
+              Identity
+            </p>
+            <p class="mt-3 font-display text-3xl font-medium tracking-tight text-bone">
+              {{ firstName }}
+            </p>
+            <p class="mt-2 font-mono text-[11px] tracking-wide text-bone/60">
               {{ profile.location }}
             </p>
           </div>
 
           <div
-            class="rounded-2xl border border-cyan/30 bg-deep/60 p-5 font-mono text-sm leading-relaxed text-cream/90 shadow-xl shadow-cyan/5 backdrop-blur"
+            class="border border-cyan/25 bg-char/55 p-6 font-mono text-[13px] leading-relaxed text-bone/85 backdrop-blur-sm"
           >
+            <p class="mb-3 font-mono text-[10px] uppercase tracking-[0.24em] text-cyan/70">
+              Brief
+            </p>
             {{ profile.bio }}
           </div>
         </div>
 
-        <!--
-          Centre column intentionally empty — the cyan hologram on the
-          canvas peeks through here.
-        -->
+        <!-- centre — empty for hologram -->
         <div class="hidden lg:col-span-4 lg:block" aria-hidden="true" />
 
         <!-- right callout: skills -->
         <div class="lg:col-span-4">
           <div
-            class="rounded-2xl border border-cyan/30 bg-deep/60 p-5 font-mono shadow-xl shadow-cyan/5 backdrop-blur"
+            class="border border-cyan/25 bg-char/55 p-6 font-mono backdrop-blur-sm"
           >
-            <p class="mb-3 text-base font-bold text-cream">Skills</p>
-            <ul class="space-y-2 text-sm text-cream/90">
+            <p class="mb-4 font-mono text-[10px] uppercase tracking-[0.24em] text-cyan/70">
+              Stack
+            </p>
+            <ul class="space-y-2.5 text-[13px] text-bone/85">
               <li
-                v-for="s in profile.skills"
+                v-for="(s, i) in profile.skills"
                 :key="s"
-                class="flex items-start gap-2"
+                class="flex items-baseline gap-3"
               >
-                <span class="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-cyan" />
+                <span class="font-mono text-[10px] tabular-nums text-cyan/60">
+                  {{ String(i + 1).padStart(2, '0') }}
+                </span>
                 {{ s }}
               </li>
             </ul>

@@ -20,11 +20,7 @@ import type {
   RoomLights,
   AudioController,
 } from '../contracts'
-import { onStrawHatClick } from './strawHat'
 import { onFootballClick } from './football'
-import { onHeadphonesClick } from './headphones'
-import { onMangaStackClick } from './mangaStack'
-import { createLampHandler } from './lamp'
 import { onMugClick } from './mug'
 import { setupKonami } from './konami'
 import { setupIdleStretch } from './idleStretch'
@@ -42,11 +38,7 @@ type PropKey = keyof RoomProps
 
 // Props that have a click handler wired up.
 const INTERACTIVE_PROPS: PropKey[] = [
-  'strawHat',
   'football',
-  'headphones',
-  'mangaStack',
-  'lamp',
   'mug',
 ]
 
@@ -61,20 +53,9 @@ export function mountEasterEggs(deps: MountDeps): { dispose: () => void } {
   // Track per-prop busy state so rapid clicks don't stack animations.
   const busy = new Set<PropKey>()
 
-  const lampHandler = createLampHandler({
-    room: deps.room,
-    lights: deps.lights,
-    audio: deps.audio,
-  })
-
   const handlers: Partial<Record<PropKey, () => Promise<void>>> = {
-    strawHat: () => onStrawHatClick({ room: deps.room, avatar: deps.avatar, audio: deps.audio }),
     football: () =>
       onFootballClick({ sceneCtx: deps.sceneCtx, room: deps.room, audio: deps.audio }),
-    headphones: () =>
-      onHeadphonesClick({ room: deps.room, avatar: deps.avatar, audio: deps.audio }),
-    mangaStack: () => onMangaStackClick({ room: deps.room, audio: deps.audio }),
-    lamp: () => lampHandler(),
     mug: () => onMugClick({ room: deps.room, audio: deps.audio }),
   }
 
@@ -133,13 +114,7 @@ export function mountEasterEggs(deps: MountDeps): { dispose: () => void } {
       konami.dispose()
       idle.dispose()
       // Cancel any in-flight tweens that touch room/avatar state.
-      gsap.killTweensOf(deps.room.props.strawHat.position)
-      gsap.killTweensOf(deps.room.props.strawHat.rotation)
-      gsap.killTweensOf(deps.room.props.headphones.position)
-      gsap.killTweensOf(deps.room.props.headphones.rotation)
       gsap.killTweensOf(deps.room.props.football.position)
-      gsap.killTweensOf(deps.room.props.mangaStack.children)
-      gsap.killTweensOf(deps.lights.deskLamp)
     },
   }
 }

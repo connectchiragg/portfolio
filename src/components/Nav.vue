@@ -3,30 +3,30 @@ import MuteToggle from './MuteToggle.vue'
 
 const links = [
   { href: '#about', label: 'About' },
-  { href: '#projects', label: 'Projects' },
+  { href: '#projects', label: 'Work' },
   { href: '#contact', label: 'Contact' },
 ]
 </script>
 
 <template>
-  <header class="fixed top-4 left-0 right-0 z-50 px-4">
+  <header class="fixed top-5 left-0 right-0 z-50 px-5">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
       <a
         href="#top"
-        class="grid h-12 w-12 place-items-center rounded-2xl bg-ink text-cream shadow-lg ring-2 ring-black/10"
+        class="grid h-11 w-11 place-items-center border border-bone/30 bg-char/70 font-display text-sm font-medium text-bone backdrop-blur transition hover:border-ember hover:text-ember"
         aria-label="Home"
       >
-        <span class="font-display text-xl font-bold">CG</span>
+        CG
       </a>
 
       <nav
-        class="hidden items-center gap-1 rounded-full bg-white/85 px-2 py-2 shadow-lg ring-1 ring-black/5 backdrop-blur md:flex"
+        class="hidden items-center gap-1 border border-bone/15 bg-char/70 px-1 py-1 backdrop-blur md:flex"
       >
         <a
           v-for="l in links"
           :key="l.href"
           :href="l.href"
-          class="rounded-full px-5 py-2 text-sm font-bold uppercase tracking-wider text-ink transition hover:bg-tangerine hover:text-white"
+          class="px-4 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-bone/80 transition hover:text-ember"
         >
           {{ l.label }}
         </a>
@@ -35,7 +35,7 @@ const links = [
       <div class="flex items-center gap-3">
         <a
           href="#contact"
-          class="group inline-flex items-center gap-2 rounded-full bg-tangerine px-5 py-3 text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-tangerine/40 ring-1 ring-black/10 transition hover:scale-105 hover:bg-magenta"
+          class="group inline-flex items-center gap-3 border border-ember bg-char/70 px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.22em] text-ember backdrop-blur transition hover:bg-ember hover:text-char"
         >
           Get in touch
           <span class="transition-transform group-hover:translate-x-1">→</span>

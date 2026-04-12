@@ -13,81 +13,84 @@ const nameParts = computed(() => {
 
 <template>
   <!--
-    The section is mostly transparent so the persistent 3D canvas shows
-    through. A horizontal gradient gives the LEFT half of the viewport a
-    soft cream wash for text legibility, fading to transparent on the
-    right where the 3D room scene lives.
+    Cinematic noir hero. The left half gets a soft graphite vignette so
+    the type stays legible while the 3D desk scene burns through on the
+    right. No coloured blobs, no rotated badges — just type, an ember
+    accent, and a hairline rule.
   -->
   <section
     id="top"
-    class="relative isolate min-h-screen overflow-hidden pt-32 pb-20"
-    style="background: linear-gradient(to right, rgba(255, 245, 233, 0.85) 0%, rgba(255, 245, 233, 0.7) 30%, rgba(255, 245, 233, 0) 60%, rgba(255, 245, 233, 0) 100%);"
+    class="relative isolate min-h-screen overflow-hidden pt-32 pb-24"
+    style="background: linear-gradient(to right, rgba(10,8,7,0.86) 0%, rgba(10,8,7,0.7) 32%, rgba(10,8,7,0.0) 62%, rgba(10,8,7,0.0) 100%);"
   >
     <div
-      class="relative mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-2"
+      class="relative mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-12"
     >
-      <div id="hero" class="relative z-10">
-        <p
-          v-if="profile.available"
-          class="mb-6 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 font-mono text-xs font-bold uppercase tracking-widest text-grape ring-1 ring-grape/20 backdrop-blur"
-        >
-          <span class="h-2 w-2 animate-pulse rounded-full bg-mint" />
-          Available for new work
+      <div id="hero" class="relative z-10 lg:col-span-7">
+        <p class="eyebrow mb-8 flex items-center gap-3">
+          <span class="hair" />
+          <span class="num">N° 00</span>
+          <span>Late Night, Bengaluru</span>
         </p>
 
         <h1
-          class="font-display text-6xl font-black leading-[0.9] tracking-tight text-ink sm:text-7xl lg:text-8xl"
+          class="font-display text-[3.6rem] font-medium leading-[0.92] tracking-[-0.02em] text-bone sm:text-7xl lg:text-[6.5rem]"
         >
-          {{ nameParts.first }}<br v-if="nameParts.rest" />{{ nameParts.rest }}
+          {{ nameParts.first }}<span class="text-ember">.</span><br v-if="nameParts.rest" />{{ nameParts.rest }}
         </h1>
 
-        <div class="mt-6 inline-block -rotate-2">
-          <span
-            class="inline-block rounded-md bg-grape px-4 py-2 font-mono text-sm font-bold uppercase tracking-wider text-white shadow-lg"
-          >
-            {{ profile.role }}
-          </span>
+        <div class="mt-8 flex items-center gap-4 font-mono text-xs uppercase tracking-[0.22em] text-ash">
+          <span class="hair" />
+          <span>{{ profile.role }}</span>
+          <span class="opacity-40">/</span>
+          <span>{{ profile.location }}</span>
         </div>
 
-        <p class="mt-8 max-w-md text-lg text-ink/70">
+        <p class="mt-8 max-w-md font-display text-base leading-relaxed text-bone/75">
           {{ profile.bio }}
         </p>
 
-        <div class="mt-10 flex flex-wrap items-center gap-4">
+        <div class="mt-12 flex flex-wrap items-center gap-4">
           <a
             href="#projects"
-            class="group inline-flex items-center gap-2 rounded-full bg-ink px-6 py-4 text-sm font-bold uppercase tracking-wider text-cream transition hover:scale-105 hover:bg-grape"
+            class="group inline-flex items-center gap-3 rounded-none border border-bone/80 bg-transparent px-7 py-4 font-mono text-[11px] font-medium uppercase tracking-[0.24em] text-bone transition hover:border-ember hover:text-ember"
           >
-            See my work
+            Selected work
             <span class="transition-transform group-hover:translate-x-1">→</span>
           </a>
           <a
             href="#about"
-            class="inline-flex items-center gap-2 rounded-full border-2 border-ink/20 bg-white/60 px-6 py-4 text-sm font-bold uppercase tracking-wider text-ink backdrop-blur transition hover:border-ink/60"
+            class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.24em] text-ash transition hover:text-bone"
           >
-            About me
+            <span class="hair" />
+            About
           </a>
         </div>
+
+        <p
+          v-if="profile.available"
+          class="mt-14 inline-flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.28em] text-ash"
+        >
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-ember opacity-60" />
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-ember" />
+          </span>
+          Open for work — Q2 / 26
+        </p>
       </div>
 
-      <!--
-        Right column intentionally empty — the 3D room scene from
-        ThreeCanvas peeks through the transparent right side of the
-        section gradient and visually fills this space.
-      -->
-      <div class="hidden lg:block" aria-hidden="true" />
+      <!-- right column intentionally empty (3D scene) -->
+      <div class="hidden lg:col-span-5 lg:block" aria-hidden="true" />
     </div>
 
     <!-- scroll cue -->
     <div
-      class="absolute bottom-8 left-1/2 -translate-x-1/2 text-ink/60"
+      class="absolute bottom-10 left-1/2 -translate-x-1/2 text-bone/40"
       aria-hidden="true"
     >
       <div class="flex flex-col items-center gap-2">
-        <div class="h-8 w-5 rounded-full border-2 border-current p-1">
-          <div class="h-1.5 w-full rounded-full bg-current" />
-        </div>
-        <span class="font-mono text-[10px] uppercase tracking-widest">scroll</span>
+        <span class="font-mono text-[10px] uppercase tracking-[0.32em]">Scroll</span>
+        <span class="block h-10 w-px bg-current" />
       </div>
     </div>
   </section>

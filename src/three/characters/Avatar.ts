@@ -54,14 +54,21 @@ import {
 import type { BufferGeometry, Material } from 'three'
 import type { Avatar, AvatarPose, Loader } from '../contracts'
 
-// Three outfits used across the four sections of the scroll story:
-//   hero      → jersey + thinking pose (the "studying the whiteboard" stance)
-//   about     → white shirt (revealed via the wardrobe-reveal scan)
-//   projects  → white shirt (continues from about)
-//   contact   → jersey + standing pose (snap-swap, not scanned)
+// Four outfits used across the four sections of the scroll story:
+//   hero      → jersey + thinking pose          (jersey-thinking, standalone)
+//   about     → wardrobe-reveal duo:
+//                 v=0 jersey-about (matched standing pose)
+//                 v=1 shirt-about (matched standing pose)
+//   projects  → shirt-about (continues from about, v=1 hold)
+//   contact   → dedicated contact outfit + pose (character-contact, snap-swap)
+//
+// The about-section duo uses a dedicated jersey/shirt pair that share
+// the same standing pose so the bodies overlap perfectly during the
+// mid-scan moment when both meshes are visible.
 const JERSEY_THINKING_GLB_URL = '/models/character-jersey-thinking.glb'
+const JERSEY_ABOUT_GLB_URL = '/models/character-jersey-about.glb'
 const SHIRT_GLB_URL = '/models/character-shirt.glb'
-const JERSEY_GLB_URL = '/models/character-jersey.glb'
+const CONTACT_GLB_URL = '/models/character-contact.glb'
 
 // ─── CHIRAG 10 jersey-back texture ─────────────────────────────────────
 function makeChirag10Texture(): CanvasTexture {
@@ -298,27 +305,40 @@ export async function loadAvatar(
   const root = new Group()
   root.name = 'Avatar'
 
-  const [thinkingGltf, shirtGltf, jerseyGltf] = await Promise.all([
-    loader.load(JERSEY_THINKING_GLB_URL),
-    loader.load(SHIRT_GLB_URL),
-    loader.load(JERSEY_GLB_URL),
-  ])
+  const [thinkingGltf, jerseyAboutGltf, shirtGltf, contactGltf] =
+    await Promise.all([
+      loader.load(JERSEY_THINKING_GLB_URL),
+      loader.load(JERSEY_ABOUT_GLB_URL),
+      loader.load(SHIRT_GLB_URL),
+      loader.load(CONTACT_GLB_URL),
+    ])
   const thinkingModel = thinkingGltf.scene // hero (jersey + thinking pose)
-  const shirtModel = shirtGltf.scene // about + projects (white shirt)
-  const jerseyModel = jerseyGltf.scene // contact (jersey + standing pose)
+  const jerseyAboutModel = jerseyAboutGltf.scene // about scan v=0 (matched-pose jersey)
+  const shirtModel = shirtGltf.scene // about scan v=1 (matched-pose shirt)
+  const contactModel = contactGltf.scene // contact (dedicated contact outfit + pose)
 
   // Single shared uniforms object — drives the scan effect on every body
-  // material across the wardrobe-reveal duo (thinking ↔ shirt).
+  // material across the wardrobe-reveal duo (jersey-about ↔ shirt).
   const uniforms = makeSharedUniforms()
 
-  // Wardrobe-reveal duo: thinking is the default (v=0), shirt is the
-  // alternate (v=1). The contact jersey is a third static mesh outside
-  // the scan — it just snap-swaps in for the contact section.
-  prepareModel(thinkingModel, uniforms, false)
+  // Wardrobe-reveal duo: jersey-about is the default (v=0), shirt is the
+  // alternate (v=1). They share the same standing pose so the bodies
+  // overlap perfectly mid-scan. Hero thinking + contact jersey are
+  // standalone meshes outside the scan — snap-swapped by visibility.
+  prepareModel(jerseyAboutModel, uniforms, false)
   prepareModel(shirtModel, uniforms, true)
 
+  // Hero thinking pose: shadows + scene parenting only, no shader injection.
+  thinkingModel.traverse((obj) => {
+    const mesh = obj as Mesh
+    if ((mesh as unknown as { isMesh?: boolean }).isMesh) {
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+    }
+  })
+
   // Contact jersey: shadows + scene parenting only, no shader injection.
-  jerseyModel.traverse((obj) => {
+  contactModel.traverse((obj) => {
     const mesh = obj as Mesh
     if ((mesh as unknown as { isMesh?: boolean }).isMesh) {
       mesh.castShadow = true
@@ -327,17 +347,16 @@ export async function loadAvatar(
   })
 
   root.add(thinkingModel)
+  root.add(jerseyAboutModel)
   root.add(shirtModel)
-  root.add(jerseyModel)
+  root.add(contactModel)
 
-  // ── CHIRAG 10 jersey-back overlays (hero + contact) ────────────────────
-  // The Avaturn jersey export doesn't have a custom name+number painted
-  // on the back. We attach a thin plane to the `Spine2` chest bone of
-  // each jersey mesh so it deforms with the bundled animation (the
-  // thinking pose's chest leans + twists). The shirt mesh doesn't get
-  // one — the white shirt has no jersey number.
+  // ── CHIRAG 10 jersey-back overlay (hero only) ──────────────────────────
+  // Pinned to the Spine2 chest bone so it deforms with the bundled
+  // animation. The about-section jersey-about mesh and the contact
+  // model do NOT get one — about scan stays clean, contact wears its
+  // own outfit.
   pinChirag10ToChestBone(thinkingModel)
-  pinChirag10ToChestBone(jerseyModel)
 
   // ── Animation mixers (one per model). Each plays the bundled
   //    avaturn_animation clip baked into its own GLB. The thinking pose
@@ -346,19 +365,23 @@ export async function loadAvatar(
   //    relies on near-stationary poses so the visible difference between
   //    the two during the scan is minimal.
   const thinkingMixer = new AnimationMixer(thinkingModel)
+  const jerseyAboutMixer = new AnimationMixer(jerseyAboutModel)
   const shirtMixer = new AnimationMixer(shirtModel)
-  const jerseyMixer = new AnimationMixer(jerseyModel)
+  const contactMixer = new AnimationMixer(contactModel)
 
   let activeClip: AnimationClip | null = null
   if (thinkingGltf.animations.length > 0) {
     activeClip = thinkingGltf.animations[0]
     thinkingMixer.clipAction(activeClip).play()
   }
+  if (jerseyAboutGltf.animations.length > 0) {
+    jerseyAboutMixer.clipAction(jerseyAboutGltf.animations[0]).play()
+  }
   if (shirtGltf.animations.length > 0) {
     shirtMixer.clipAction(shirtGltf.animations[0]).play()
   }
-  if (jerseyGltf.animations.length > 0) {
-    jerseyMixer.clipAction(jerseyGltf.animations[0]).play()
+  if (contactGltf.animations.length > 0) {
+    contactMixer.clipAction(contactGltf.animations[0]).play()
   }
 
   // ── Find the head bone (use the thinking mesh; bones are equivalent
@@ -402,57 +425,77 @@ export async function loadAvatar(
   }
 
   // ── Wardrobe-reveal + contact-swap drivers ─────────────────────────────
-  // The scan operates on the duo (thinking ↔ shirt). When the contact
-  // section is active, those two are hidden and the static contact jersey
-  // takes over via setShowContact(true).
+  // The scan operates on the matched-pose duo (jersey-about ↔ shirt).
+  // The hero thinking pose and contact jersey are independent meshes,
+  // toggled by setHeroThinking/setShowContact.
   //
-  //   v=0       → thinking visible, shirt hidden            (hero)
-  //   v=1       → shirt visible, thinking hidden            (about / projects)
-  //   0 < v < 1 → both visible, scan band glowing in between
-  //   contact   → contact jersey visible, scan duo hidden   (contact)
+  //   scan v=0       → jersey-about visible, shirt hidden
+  //   scan v=1       → shirt visible, jersey-about hidden
+  //   scan 0<v<1     → both visible, scan band glowing in between
+  //   hero (thinking)→ thinking visible, scan duo + contact hidden
+  //   contact        → contact jersey visible, scan duo + thinking hidden
   const SCAN_TOP = 2.0 // ~head height + a margin
   const SCAN_BOTTOM = -0.05 // just under the feet
   let isContactSwap = false
+  let isHeroThinking = true // start in hero pose
+
+  const refreshDuoVisibility = (): void => {
+    if (isContactSwap || isHeroThinking) {
+      jerseyAboutModel.visible = false
+      shirtModel.visible = false
+      return
+    }
+    const v = uniforms.uScanReveal.value
+    if (v <= 0.001) {
+      jerseyAboutModel.visible = true
+      shirtModel.visible = false
+    } else if (v >= 0.999) {
+      jerseyAboutModel.visible = false
+      shirtModel.visible = true
+    } else {
+      jerseyAboutModel.visible = true
+      shirtModel.visible = true
+    }
+  }
 
   const setScanReveal = (v: number): void => {
     const clamped = MathUtils.clamp(v, 0, 1)
     uniforms.uScanReveal.value = clamped
     uniforms.uScanY.value = MathUtils.lerp(SCAN_TOP, SCAN_BOTTOM, clamped)
-    if (isContactSwap) return // contact jersey takes over, scan is paused
-    if (clamped <= 0.001) {
-      thinkingModel.visible = true
-      shirtModel.visible = false
-    } else if (clamped >= 0.999) {
-      thinkingModel.visible = false
-      shirtModel.visible = true
-    } else {
-      thinkingModel.visible = true
-      shirtModel.visible = true
-    }
+    refreshDuoVisibility()
   }
 
   const setShowContact = (on: boolean): void => {
     isContactSwap = on
     if (on) {
       thinkingModel.visible = false
-      shirtModel.visible = false
-      jerseyModel.visible = true
+      contactModel.visible = true
     } else {
-      jerseyModel.visible = false
-      // Re-apply current scan state so the right scan-duo mesh comes back
-      setScanReveal(uniforms.uScanReveal.value)
+      contactModel.visible = false
     }
+    refreshDuoVisibility()
+  }
+
+  // Hero pose toggle: when on, only the thinking jersey shows; when off,
+  // the scan duo takes over (used by the per-section state machine in
+  // timeline.ts so hero stays a single pose with no scan effects).
+  const setHeroThinking = (on: boolean): void => {
+    isHeroThinking = on
+    thinkingModel.visible = on && !isContactSwap
+    refreshDuoVisibility()
   }
 
   // Default state: hero (thinking pose), contact swap off
-  jerseyModel.visible = false
+  contactModel.visible = false
+  thinkingModel.visible = true
   setScanReveal(0)
 
-  // ── Tick: advance all three mixers + the time uniform ─────────────────
+  // ── Tick: advance all four mixers + the time uniform ─────────────────
   const tick = (dt: number, elapsed: number): void => {
     thinkingMixer.update(dt)
+    jerseyAboutMixer.update(dt)
     shirtMixer.update(dt)
-    jerseyMixer.update(dt)
+    contactMixer.update(dt)
     uniforms.uTime.value = elapsed
 
     if (!headTrackingActive && headBone) {
@@ -463,8 +506,9 @@ export async function loadAvatar(
   // ── Dispose ────────────────────────────────────────────────────────────
   const dispose = (): void => {
     thinkingMixer.stopAllAction()
+    jerseyAboutMixer.stopAllAction()
     shirtMixer.stopAllAction()
-    jerseyMixer.stopAllAction()
+    contactMixer.stopAllAction()
     root.traverse((obj: Object3D) => {
       const mesh = obj as Mesh
       const geometry = mesh.geometry as BufferGeometry | undefined
@@ -494,6 +538,7 @@ export async function loadAvatar(
     applyJersey,
     setScanReveal,
     setShowContact,
+    setHeroThinking,
     dispose,
     tick,
   }

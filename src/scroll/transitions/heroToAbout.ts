@@ -42,16 +42,20 @@ export function buildHeroToAbout(
   const { camera, scene, room, hologram, lookAt } = deps
   const end = at + duration
 
-  // Camera position
+  // Camera position. immediateRender: false so the from-state is NOT
+  // written to camera.position when the tween is added — otherwise the
+  // last fromTo added to the master timeline would clobber the camera
+  // before the user has scrolled anywhere.
   tl.fromTo(
     camera.position,
-    { x: from.pos.x, y: from.pos.y, z: from.pos.z },
+    { x: from.pos.x, y: from.pos.y, z: from.pos.z, immediateRender: false },
     {
       x: to.pos.x,
       y: to.pos.y,
       z: to.pos.z,
       ease: 'power2.inOut',
       duration,
+      immediateRender: false,
     },
     at,
   )
@@ -59,13 +63,14 @@ export function buildHeroToAbout(
   // Camera lookAt target (tracked via a plain object, re-applied per tick)
   tl.fromTo(
     lookAt,
-    { x: from.look.x, y: from.look.y, z: from.look.z },
+    { x: from.look.x, y: from.look.y, z: from.look.z, immediateRender: false },
     {
       x: to.look.x,
       y: to.look.y,
       z: to.look.z,
       ease: 'power2.inOut',
       duration,
+      immediateRender: false,
     },
     at,
   )
@@ -85,20 +90,9 @@ export function buildHeroToAbout(
     at,
   )
 
-  // Phase 7C+: hologram reveal 0 → 1 spans the full hero→about segment
-  // with a smooth power3.inOut ease so the wardrobe scan feels gradual on
-  // both ends instead of snapping at the start.
-  const reveal = { v: 0 }
-  tl.to(
-    reveal,
-    {
-      v: 1,
-      ease: 'power3.inOut',
-      duration,
-      onUpdate: () => hologram.setReveal(reveal.v),
-    },
-    at,
-  )
+  // Phase 7+: scan reveal is now driven by a dedicated ScrollTrigger
+  // tied to the visible #about range (see timeline.ts), not the master
+  // timeline. The hero section must stay pure jersey with no scan band.
 
   // Visibility toggles are handled in the per-section ScrollTriggers in
   // timeline.ts (onEnter / onLeaveBack), not here. Scrubbed `tl.call` fires

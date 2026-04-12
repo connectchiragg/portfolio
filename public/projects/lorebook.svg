@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <rect width="800" height="500" fill="#0f0d0c"/>
+  <rect x="0" y="0" width="800" height="38" fill="#1a1614"/>
+  <circle cx="22" cy="19" r="5" fill="#d97a3a"/>
+  <circle cx="40" cy="19" r="5" fill="#635a4f"/>
+  <circle cx="58" cy="19" r="5" fill="#635a4f"/>
+  <text x="400" y="24" font-family="JetBrains Mono, monospace" font-size="11" fill="#a39788" text-anchor="middle">lorebook.io/the-iron-coast</text>
+  <!-- left tree -->
+  <rect x="0" y="38" width="200" height="462" fill="#0a0807"/>
+  <g font-family="JetBrains Mono, monospace" font-size="11" fill="#a39788">
+    <text x="20" y="80" fill="#d97a3a">▾ Characters</text>
+    <text x="36" y="100">· Aelin Vorr</text>
+    <text x="36" y="118">· Mottle</text>
+    <text x="36" y="136">· The Cartographer</text>
+    <text x="20" y="166" fill="#d97a3a">▾ Factions</text>
+    <text x="36" y="186">· Iron Coast Guild</text>
+    <text x="36" y="204">· Salt Bishops</text>
+    <text x="20" y="234" fill="#d97a3a">▸ Locations</text>
+    <text x="20" y="262" fill="#d97a3a">▸ Threads</text>
+    <text x="20" y="290" fill="#d97a3a">▸ Glossary</text>
+  </g>
+  <!-- main panel -->
+  <text x="230" y="90" font-family="Space Grotesk, sans-serif" font-size="26" fill="#e9e2d4">Aelin Vorr</text>
+  <text x="230" y="112" font-family="JetBrains Mono, monospace" font-size="11" fill="#635a4f">CHARACTER · LAST EDITED 3 DAYS AGO</text>
+  <line x1="230" y1="128" x2="780" y2="128" stroke="#1f1a16"/>
+  <g font-family="Space Grotesk, sans-serif" font-size="13" fill="#a39788">
+    <text x="230" y="160">Cartographer of the Iron Coast. Once an apprentice to</text>
+    <text x="230" y="180">the Salt Bishops; defected after the third Drowning.</text>
+    <text x="230" y="200">Carries her father's quadrant — a brass instrument</text>
+    <text x="230" y="220">that hums when ships sink within a league.</text>
+  </g>
+  <!-- AI suggestion bubble -->
+  <rect x="230" y="260" width="540" height="78" fill="#1a1614" stroke="#d97a3a"/>
+  <text x="248" y="282" font-family="JetBrains Mono, monospace" font-size="10" fill="#d97a3a">◆ LOREBOOK · CONSISTENCY CHECK</text>
+  <g font-family="Space Grotesk, sans-serif" font-size="12" fill="#e9e2d4">
+    <text x="248" y="306">Chapter 14 says Aelin lost the quadrant in the Reach.</text>
+    <text x="248" y="324">This page still lists it as carried. Resolve?</text>
+  </g>
+  <!-- linked tags -->
+  <g font-family="JetBrains Mono, monospace" font-size="10">
+    <rect x="230" y="370" width="90" height="22" fill="none" stroke="#1f1a16"/>
+    <text x="240" y="385" fill="#a39788">@iron-coast</text>
+    <rect x="328" y="370" width="100" height="22" fill="none" stroke="#1f1a16"/>
+    <text x="338" y="385" fill="#a39788">@salt-bishops</text>
+    <rect x="436" y="370" width="86" height="22" fill="none" stroke="#1f1a16"/>
+    <text x="446" y="385" fill="#a39788">@quadrant</text>
+  </g>
+</svg>

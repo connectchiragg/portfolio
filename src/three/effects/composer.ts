@@ -39,35 +39,39 @@ export function createComposer(ctx: SceneContext): Composer {
   const renderPass = new RenderPass(ctx.scene, ctx.camera)
   composer.addPass(renderPass)
 
-  // 2. Bloom — pops lamp / hologram / emissive screens.
+  // 2. Bloom — pops lamp / hologram / emissive screens. Threshold raised
+  // so the desk surface and walls don't pick up a hazy glow.
   const bloomEffect = new BloomEffect({
-    intensity: 1.2,
-    luminanceThreshold: 0.7,
-    luminanceSmoothing: 0.4,
+    intensity: 1.55,
+    luminanceThreshold: 0.62,
+    luminanceSmoothing: 0.32,
     mipmapBlur: true,
+    radius: 0.85,
   })
   const bloomPass = new EffectPass(ctx.camera, bloomEffect)
   composer.addPass(bloomPass)
 
-  // 3. Vignette — subtle edge darkening.
+  // 3. Vignette — subtle edge darkening, deep enough to read as anamorphic.
   const vignetteEffect = new VignetteEffect({
-    darkness: 0.5,
-    offset: 0.3,
+    darkness: 0.42,
+    offset: 0.42,
   })
   const vignettePass = new EffectPass(ctx.camera, vignetteEffect)
   composer.addPass(vignettePass)
 
-  // 4. Film grain via NoiseEffect, blended OVERLAY at ~0.15.
+  // 4. Film grain. ADD blend with low opacity reads more like film than
+  // OVERLAY, which can clip into solid regions. Density tuned subtle.
   const noiseEffect = new NoiseEffect({
-    blendFunction: BlendFunction.OVERLAY,
+    blendFunction: BlendFunction.ADD,
     premultiply: true,
   })
-  noiseEffect.blendMode.opacity.value = 0.15
+  noiseEffect.blendMode.opacity.value = 0.035
   const noisePass = new EffectPass(ctx.camera, noiseEffect)
   composer.addPass(noisePass)
 
-  // 5. Chromatic aberration — intensity controlled via offset magnitude.
-  const baseCAOffset = new Vector2(0.0005, 0.0005)
+  // 5. Chromatic aberration — barely perceptible RGB split, mostly used
+  // for the fast-scroll boost via setPasses().
+  const baseCAOffset = new Vector2(0.0006, 0.001)
   const chromaticEffect = new ChromaticAberrationEffect({
     offset: baseCAOffset.clone(),
     radialModulation: false,
