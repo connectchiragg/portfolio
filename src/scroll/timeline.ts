@@ -313,9 +313,13 @@ export function createTimeline(): MasterTimeline {
       lightsExt.setAboutLightLevel?.(1)
       lightsExt.setMailroomLightLevel?.(0)
       room.root.visible = false
-      avatar.root.visible = true
+      // Avatar visibility is handled by the rise scrub trigger —
+      // don't make it visible here or the hero jersey model flashes
+      // in the blue zone before the teleport takes effect.
+      avatar.root.visible = false
       // Teleport the avatar onto the hologram platform (parked at z=8).
-      avatar.root.position.set(0, 0.05, 8)
+      // Start below the camera view — the rise scrub trigger brings it up.
+      avatar.root.position.set(0, -0.8, 8)
       // Face the camera for the wardrobe-reveal close-up.
       avatar.root.rotation.set(0, Math.PI, 0)
       avatar.play('standing')
@@ -329,7 +333,7 @@ export function createTimeline(): MasterTimeline {
     const setProjectsState = (): void => {
       lightsExt.setAboutLightLevel?.(0)
       lightsExt.setMailroomLightLevel?.(0)
-      room.root.visible = true
+      room.root.visible = false
       // The four project cards cover the centre of the viewport in the
       // projects section, so an avatar parked at the desk reads as a
       // tiny silhouette peeking between cards (worse than not being
@@ -393,10 +397,16 @@ export function createTimeline(): MasterTimeline {
         scrub: true,
         onUpdate: (self) => {
           const p = self.progress
+          // Hide room + hero props once the sink starts so they
+          // don't trail into the about section's blue zone.
+          if (p > 0.1) {
+            room.root.visible = false
+            heroDisc.visible = false
+            avatarExt.setHeroThinking?.(false)
+          }
+          // Sink the room down, avatar stays put (section state
+          // functions handle avatar teleport + visibility).
           room.root.position.y = roomBaseY - 6 * p
-          const lift = 2.2 * p
-          avatar.root.position.y = lift
-          heroDisc.position.y = 0.005 + lift
         },
       }),
     )
@@ -452,6 +462,14 @@ export function createTimeline(): MasterTimeline {
         end: 'bottom center',
         onEnter: setHeroState,
         onEnterBack: setHeroState,
+        onLeave: () => {
+          // Immediately hide the hero jersey avatar when leaving
+          // the hero section so it doesn't bleed into the about zone.
+          avatarExt.setHeroThinking?.(false)
+          avatar.root.visible = false
+          room.root.visible = false
+          heroDisc.visible = false
+        },
       }),
     )
 
@@ -476,7 +494,7 @@ export function createTimeline(): MasterTimeline {
     // (section leaving, avatar lifted out of frame). Tighter than the
     // top-bottom→bottom-top window, so the rise tracks the section's
     // visible scroll exactly instead of pre-rising before it's read.
-    const RISE_BASE_Y = 0.05
+    const RISE_BASE_Y = -0.8
     const RISE_TOP_Y = 2.4
     triggers.push(
       ScrollTrigger.create({
@@ -487,7 +505,12 @@ export function createTimeline(): MasterTimeline {
         onUpdate: (self) => {
           const y = RISE_BASE_Y + (RISE_TOP_Y - RISE_BASE_Y) * self.progress
           avatar.root.position.y = y
-          hologram.root.position.y = y - RISE_BASE_Y
+          // Make avatar visible once the rise has started (teleport done)
+          if (self.progress > 0.05) {
+            avatar.root.visible = true
+          }
+          // Platform stays at the avatar's feet
+          hologram.root.position.y = y
         },
       }),
     )

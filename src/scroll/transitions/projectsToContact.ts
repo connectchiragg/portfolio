@@ -108,8 +108,10 @@ export function buildProjectsToContact(
     at,
   )
 
-  // Visibility toggles live in timeline.ts per-section ScrollTriggers; see
-  // heroToAbout.ts for the rationale.
-  void room
+  // Hide the room at the start of the fly so it doesn't trail behind the
+  // camera on its way to the mailroom (the room sits at z≈0 and stays in
+  // frame for the first half of the long camera travel to z=19.5).
+  tl.call(() => { room.root.visible = false }, undefined, at)
+
   void mailroom
 }
