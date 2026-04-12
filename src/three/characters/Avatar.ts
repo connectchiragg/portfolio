@@ -628,6 +628,8 @@ export async function loadAvatar(
       avg.divideScalar(palmBones.length)
       // Shift down so the ball sits under the forearm/wrist
       avg.y -= 0.12
+      avg.x -= 0.03  // slightly left
+      avg.z -= 0.035  // slightly behind fingers
       // Convert world position to the ball's parent (root) local space
       root.worldToLocal(avg)
       handBall.position.copy(avg)
