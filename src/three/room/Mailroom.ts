@@ -386,14 +386,14 @@ export function buildMailroom(): Group {
     //     The ball sits on top of the pedestal directly under the
     //     avatar's hand (added as a separate Mesh further below —
     //     search for "football").
-    { w: 0.7, h: 1.05, d: 0.7, pos: [0.85, 0.525, 0.7], rotY: -0.08 },
-    // PEDESTAL — small box that elevates the ball into the hand grip
-    { w: 0.32, h: 0.22, d: 0.3, pos: [0.88, 1.16, 0.78], rotY: 0.08 },
+    { w: 0.7, h: 1.05, d: 0.7, pos: [0.85, 0.525, 0.55], rotY: -0.08 },
+    // PEDESTAL — small box shifted right to serve as base for ball
+    { w: 0.32, h: 0.14, d: 0.3, pos: [1.05, 1.12, 0.38], rotY: 0.08 },
 
-    // ─── Side stack (camera-right of the main stack) — carries the lamp
+    // ─── Side stack (camera-right of the main stack) — top box removed,
+    //     envelope pile fills the gap
     { w: 0.6, h: 0.6, d: 0.6, pos: [1.95, 0.3, 0.0], rotY: 0.14 },
     { w: 0.45, h: 0.4, d: 0.45, pos: [1.95, 0.8, 0.0], rotY: -0.22 },
-    { w: 0.35, h: 0.32, d: 0.35, pos: [1.92, 1.16, 0.0], rotY: 0.05 },
 
     // ─── Back stack against the wall
     { w: 0.65, h: 0.65, d: 0.55, pos: [0.4, 0.325, -1.6], rotY: 0.08 },
@@ -422,12 +422,19 @@ export function buildMailroom(): Group {
   // A single envelope geometry + material rendered ~180 times in one
   // draw call. Scattered randomly across a wide rectangle in front of
   // the box stack with y-jitter so they pile naturally.
-  const ENVELOPE_COUNT = 180
+  const ENVELOPE_COUNT = 530 // 180 floor + 150 side pile + 200 main box pile
+  const floorEnvTex = makeEnvelopeTexture()
   const envelopeMat = new MeshStandardMaterial({
-    color: '#ece4d2',
-    roughness: 0.85,
+    map: floorEnvTex,
+    emissiveMap: floorEnvTex,
+    emissive: '#5a4322',
+    emissiveIntensity: 0.6,
+    roughness: 0.95,
+    metalness: 0,
+    side: DoubleSide,
   })
-  const envelopeGeo = new BoxGeometry(0.34, 0.014, 0.22)
+  const envelopeGeo = new PlaneGeometry(0.22, 0.14)
+  envelopeGeo.rotateX(-Math.PI / 2)
   const envelopes = new InstancedMesh(envelopeGeo, envelopeMat, ENVELOPE_COUNT)
   envelopes.castShadow = false
   envelopes.receiveShadow = true
@@ -442,20 +449,47 @@ export function buildMailroom(): Group {
   //   2. A thinner trail behind the box stack
   for (let i = 0; i < ENVELOPE_COUNT; i++) {
     let x: number, z: number
-    if (i < ENVELOPE_COUNT * 0.78) {
+    let y: number
+    if (i >= 330) {
+      // Messy pile on top of the main lean box (x=0.85, z=0.55, top≈1.05)
+      const idx = i - 330
+      const layer = idx / 200
+      const spread = 0.55 * (1 - layer * 0.5)
+      x = 0.85 + (Math.random() - 0.5) * spread
+      z = 0.55 + (Math.random() - 0.5) * spread
+      y = 1.05 + idx * 0.0008
+    } else if (i >= 180) {
+      // Messy mail pile on side stack — wide at base, narrow at peak
+      const idx = i - 180
+      const layer = idx / 150 // 0..1 bottom to top
+      const spread = 0.35 * (1 - layer * 0.8)
+      x = 1.95 + (Math.random() - 0.5) * spread
+      z = 0.0 + (Math.random() - 0.5) * spread
+      // Each envelope is ~0.014 thick, stack them tightly
+      y = 1.0 + idx * 0.0015
+    } else if (i < ENVELOPE_COUNT * 0.78) {
       // Foreground sea — wide spread in front of the box pile
       x = MathUtils.lerp(-2.4, 3.0, Math.random())
       z = MathUtils.lerp(0.6, 2.6, Math.random())
+      y = 0.008 + Math.random() * 0.07
     } else {
       // Trail behind / around the boxes
       x = MathUtils.lerp(-1.5, 2.6, Math.random())
       z = MathUtils.lerp(-2.4, -0.4, Math.random())
+      y = 0.008 + Math.random() * 0.07
     }
-    // Y-jitter so envelopes stack visibly
-    const y = 0.008 + Math.random() * 0.07
-    const rot = Math.random() * Math.PI * 2
-    const scl = 0.8 + Math.random() * 0.55 // 0.8x..1.35x
-    tmpQuat.setFromAxisAngle(upAxis, rot)
+    const scl = i >= 180 ? 0.45 + Math.random() * 0.25 : 0.8 + Math.random() * 0.55
+    if (i >= 180) { // both piles get messy tilts
+      // Messy tilted orientations — envelopes lean and stick out
+      const tiltX = (Math.random() - 0.5) * 0.6 // lean forward/back
+      const rotY = Math.random() * Math.PI * 2   // random yaw
+      const tiltZ = (Math.random() - 0.5) * 0.5  // lean left/right
+      const euler = new Euler(tiltX, rotY, tiltZ)
+      tmpQuat.setFromEuler(euler)
+    } else {
+      const rot = Math.random() * Math.PI * 2
+      tmpQuat.setFromAxisAngle(upAxis, rot)
+    }
     tmpScl.set(scl, 1, scl)
     tmpMat.compose(new Vector3(x, y, z), tmpQuat, tmpScl)
     envelopes.setMatrixAt(i, tmpMat)
@@ -610,64 +644,7 @@ export function buildMailroom(): Group {
 
   // Football removed from pedestal — now held in avatar's hand (Avatar.ts)
 
-  // ─── The ONLY side prop kept is the small desk lamp on the side stack.
-  // Tape roll, mailing tube, clipboard and the hanging tags were removed
-  // per user feedback — they read as visual clutter, not balance.
-  const SIDE_X = 1.92
-  const SIDE_Z = 0.0
-  const SIDE_TOP = 1.32
-
-  // ── Small desk lamp on the side stack ──────────────────────────────────
-  const lampBase = new Mesh(
-    new CylinderGeometry(0.085, 0.1, 0.022, 18),
-    new MeshStandardMaterial({
-      color: '#1a1410',
-      roughness: 0.45,
-      metalness: 0.6,
-    }),
-  )
-  lampBase.position.set(SIDE_X + 0.25, SIDE_TOP + 0.011, SIDE_Z - 0.32)
-  lampBase.castShadow = true
-  root.add(lampBase)
-  const lampStem = new Mesh(
-    new CylinderGeometry(0.012, 0.012, 0.32, 8),
-    new MeshStandardMaterial({
-      color: '#1a1410',
-      roughness: 0.4,
-      metalness: 0.7,
-    }),
-  )
-  lampStem.position.set(SIDE_X + 0.25, SIDE_TOP + 0.18, SIDE_Z - 0.32)
-  root.add(lampStem)
-  const lampShade = new Mesh(
-    new CylinderGeometry(0.04, 0.13, 0.17, 18, 1, true),
-    new MeshStandardMaterial({
-      color: '#d97a3a',
-      emissive: '#f3a35e',
-      emissiveIntensity: 1.6,
-      roughness: 0.4,
-      side: DoubleSide,
-    }),
-  )
-  lampShade.position.set(SIDE_X + 0.34, SIDE_TOP + 0.36, SIDE_Z - 0.32)
-  lampShade.rotation.z = -0.6
-  root.add(lampShade)
-  const lampBulb = new Mesh(
-    new CylinderGeometry(0.038, 0.038, 0.005, 12),
-    new MeshStandardMaterial({
-      color: '#fff7d8',
-      emissive: '#fff7d8',
-      emissiveIntensity: 4.0,
-    }),
-  )
-  lampBulb.position.set(
-    SIDE_X + 0.34 + Math.sin(-0.6) * 0.085,
-    SIDE_TOP + 0.36 + Math.cos(-0.6) * 0.085,
-    SIDE_Z - 0.32,
-  )
-  lampBulb.rotation.x = Math.PI / 2
-  lampBulb.rotation.z = -0.6
-  root.add(lampBulb)
+  // Lamp removed per user request
 
   // Avatar mount spot is intentionally left empty at (0, 0, 0) — orchestrator
   // teleports the standing avatar to the mailroom group position.
