@@ -363,7 +363,8 @@ export function createTimeline(): MasterTimeline {
       heroDisc.visible = false
       avatar.root.visible = true
       // Teleport the avatar onto the hologram platform (parked at z=8).
-      avatar.root.position.set(0, 0, 8)
+      // X offset to centre model on the platform disc.
+      avatar.root.position.set(-0.38, 0, 8)
       // Face the camera for the wardrobe-reveal close-up.
       avatar.root.rotation.set(0, Math.PI, 0)
       avatar.play('standing')
