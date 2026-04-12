@@ -207,7 +207,7 @@ export function createTimeline(): MasterTimeline {
     // Start descent exactly when heroToAbout ends (no overlap = no snap).
     // Use `to` (not `fromTo`) so it picks up from wherever the camera is.
     const aboutDescentAt = heroAboutAt + T_HERO_ABOUT
-    const T_ABOUT_DESCENT = T_ABOUT_HOLD * 0.15
+    const T_ABOUT_DESCENT = T_ABOUT_HOLD * 0.3
     tl.to(
       camera.position,
       {
