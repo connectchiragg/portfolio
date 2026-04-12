@@ -204,11 +204,12 @@ export function createTimeline(): MasterTimeline {
     // Camera descent during the about hold: bird's eye → front view.
     // This replaces the tick-based Phase 1 so GSAP owns ALL camera
     // movement and there's no dual-control jitter.
-    const aboutDescentAt = heroAboutAt + T_HERO_ABOUT - 0.03 // start slightly before about hold
-    const T_ABOUT_DESCENT = T_ABOUT_HOLD * 0.3 // front angle reached early
-    tl.fromTo(
+    // Start descent exactly when heroToAbout ends (no overlap = no snap).
+    // Use `to` (not `fromTo`) so it picks up from wherever the camera is.
+    const aboutDescentAt = heroAboutAt + T_HERO_ABOUT
+    const T_ABOUT_DESCENT = T_ABOUT_HOLD * 0.3
+    tl.to(
       camera.position,
-      { x: ABOUT_TOP.pos.x, y: ABOUT_TOP.pos.y, z: ABOUT_TOP.pos.z, immediateRender: false },
       {
         x: ABOUT_FRONT.pos.x,
         y: ABOUT_FRONT.pos.y,
@@ -219,9 +220,8 @@ export function createTimeline(): MasterTimeline {
       },
       aboutDescentAt,
     )
-    tl.fromTo(
+    tl.to(
       lookAt,
-      { x: ABOUT_TOP.look.x, y: ABOUT_TOP.look.y, z: ABOUT_TOP.look.z, immediateRender: false },
       {
         x: ABOUT_FRONT.look.x,
         y: ABOUT_FRONT.look.y,
