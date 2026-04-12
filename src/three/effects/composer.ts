@@ -42,11 +42,11 @@ export function createComposer(ctx: SceneContext): Composer {
   // 2. Bloom — pops lamp / hologram / emissive screens. Threshold raised
   // so the desk surface and walls don't pick up a hazy glow.
   const bloomEffect = new BloomEffect({
-    intensity: 1.55,
-    luminanceThreshold: 0.62,
+    intensity: 1.2,
+    luminanceThreshold: 0.75,
     luminanceSmoothing: 0.32,
     mipmapBlur: true,
-    radius: 0.85,
+    radius: 0.6,
   })
   const bloomPass = new EffectPass(ctx.camera, bloomEffect)
   composer.addPass(bloomPass)

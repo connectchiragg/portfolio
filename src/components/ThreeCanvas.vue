@@ -110,9 +110,11 @@ onMounted(async () => {
   // floating dots looked like noise, not atmosphere). Keep createSakuraField
   // available for a future re-enable if/when we have a sakura sprite.
 
-  // God rays — additive translucent slabs from the hero window
+  // God rays — additive translucent slabs from the hero window.
+  // Parent under room.root so they auto-hide when the room is hidden
+  // (about/contact sections), avoiding wasted fragment shading.
   const gr = createGodRays(scene.scene, scene.camera)
-  scene.scene.add(gr.object)
+  loadedRoom.root.add(gr.object)
   godRays.value = gr
 
   // GPU tier check — disable postprocessing on low-end devices

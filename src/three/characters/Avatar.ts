@@ -492,10 +492,10 @@ export async function loadAvatar(
 
   // ── Tick: advance all four mixers + the time uniform ─────────────────
   const tick = (dt: number, elapsed: number): void => {
-    thinkingMixer.update(dt)
-    jerseyAboutMixer.update(dt)
-    shirtMixer.update(dt)
-    contactMixer.update(dt)
+    if (thinkingModel.visible) thinkingMixer.update(dt)
+    if (jerseyAboutModel.visible) jerseyAboutMixer.update(dt)
+    if (shirtModel.visible) shirtMixer.update(dt)
+    if (contactModel.visible) contactMixer.update(dt)
     uniforms.uTime.value = elapsed
 
     if (!headTrackingActive && headBone) {

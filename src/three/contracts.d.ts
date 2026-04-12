@@ -111,6 +111,8 @@ export interface Avatar {
    * duo entirely while on. Used by the contact-section state.
    */
   setShowContact?: (on: boolean) => void
+  /** Toggle the hero thinking-pose model visibility */
+  setHeroThinking?: (on: boolean) => void
   /** Optional per-frame update — orchestrator wires this into sceneCtx.onTick */
   tick?: (dt: number, elapsed: number) => void
   dispose: () => void

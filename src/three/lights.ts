@@ -20,7 +20,6 @@ import {
   HemisphereLight,
   SpotLight,
   Object3D,
-  Vector3,
 } from 'three'
 import type { Scene } from 'three'
 import type { RoomLights } from './contracts'
@@ -46,7 +45,7 @@ export function createRoomLights(): RoomLights {
   const moonlight = new DirectionalLight('#7a9eff', 0.15)
   moonlight.position.set(-4, 4.5, -3)
   moonlight.castShadow = true
-  moonlight.shadow.mapSize.set(2048, 2048)
+  moonlight.shadow.mapSize.set(512, 512)
   moonlight.shadow.camera.left = -5
   moonlight.shadow.camera.right = 5
   moonlight.shadow.camera.top = 5

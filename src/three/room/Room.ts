@@ -16,7 +16,6 @@ import {
   SRGBColorSpace,
   LinearFilter,
   Vector2,
-  DoubleSide,
   AdditiveBlending,
   Object3D,
   Box3,
@@ -25,7 +24,6 @@ import {
   LatheGeometry,
   TorusGeometry,
   SphereGeometry,
-  CylinderGeometry,
 } from 'three'
 import type { Material } from 'three'
 import type { Loader, Room, RoomProps } from '../contracts'
@@ -179,88 +177,11 @@ function buildMugPrimitive(): Group {
   return group
 }
 
-function buildHeadphonesPrimitive(): Group {
-  const group = new Group()
-  const mat = std(PALETTE.black, 0.5)
-  const band = shadowed(new Mesh(new TorusGeometry(0.09, 0.012, 8, 20, Math.PI), mat))
-  band.rotation.z = Math.PI
-  band.position.y = 0.09
-  group.add(band)
-  const cupGeom = new CylinderGeometry(0.045, 0.045, 0.03, 16)
-  const cupL = shadowed(new Mesh(cupGeom, mat))
-  cupL.position.set(-0.09, 0.02, 0)
-  cupL.rotation.z = Math.PI / 2
-  group.add(cupL)
-  const cupR = shadowed(new Mesh(cupGeom, mat))
-  cupR.position.set(0.09, 0.02, 0)
-  cupR.rotation.z = Math.PI / 2
-  group.add(cupR)
-  return group
-}
-
-function buildLampPrimitive(): Group {
-  const group = new Group()
-  const metalMat = std(PALETTE.ink, 0.4, 0.6)
-  const base = shadowed(new Mesh(new CylinderGeometry(0.08, 0.1, 0.03, 16), metalMat))
-  base.position.y = 0.015
-  group.add(base)
-  const arm = shadowed(new Mesh(new CylinderGeometry(0.012, 0.012, 0.45, 10), metalMat))
-  arm.position.y = 0.24
-  group.add(arm)
-  const shadePts: Vector2[] = [
-    new Vector2(0.02, 0), new Vector2(0.1, 0),
-    new Vector2(0.14, 0.12), new Vector2(0.13, 0.13),
-  ]
-  const shade = shadowed(new Mesh(
-    new LatheGeometry(shadePts, 20),
-    new MeshStandardMaterial({
-      color: PALETTE.warmShade, emissive: PALETTE.tangerine,
-      emissiveIntensity: 0.35, roughness: 0.6, side: DoubleSide,
-    }),
-  ))
-  shade.position.y = 0.46
-  group.add(shade)
-  return group
-}
-
 function buildFootballPrimitive(): Group {
   const group = new Group()
   const ball = shadowed(new Mesh(new SphereGeometry(0.13, 24, 18), std(PALETTE.cream, 0.6)))
   ball.position.y = 0.13
   group.add(ball)
-  return group
-}
-
-function buildMangaPrimitive(): Group {
-  const group = new Group()
-  const slabs = [
-    { color: PALETTE.maroon, rot: 0.04 },
-    { color: PALETTE.mustard, rot: -0.06 },
-    { color: PALETTE.navy, rot: 0.02 },
-  ]
-  slabs.forEach((s, i) => {
-    const slab = shadowed(new Mesh(new BoxGeometry(0.18, 0.03, 0.24), std(s.color, 0.75)))
-    slab.position.y = 0.015 + i * 0.032
-    slab.rotation.y = s.rot
-    group.add(slab)
-  })
-  return group
-}
-
-function buildPlantPrimitive(): Group {
-  const group = new Group()
-  const shelf = shadowed(new Mesh(new BoxGeometry(0.5, 0.03, 0.22), std(PALETTE.wood, 0.7)))
-  group.add(shelf)
-  const pot = shadowed(new Mesh(new CylinderGeometry(0.07, 0.05, 0.08, 14), std('#a35b2c', 0.8)))
-  pot.position.y = 0.055
-  group.add(pot)
-  const leafMat = std(PALETTE.leafGreen, 0.6)
-  for (const [x, y, z, r] of [[0, 0.14, 0, 0.05], [0.03, 0.13, 0.02, 0.04], [-0.03, 0.13, -0.02, 0.04]] as [number, number, number, number][]) {
-    const leaf = shadowed(new Mesh(new SphereGeometry(r, 10, 8), leafMat))
-    leaf.position.set(x, y, z)
-    leaf.scale.y = 1.4
-    group.add(leaf)
-  }
   return group
 }
 

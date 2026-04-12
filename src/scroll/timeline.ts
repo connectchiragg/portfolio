@@ -69,7 +69,7 @@ const ABOUT_STOP: CameraStop = {
   // Pulled back + tilted up so the avatar sits lower in frame: feet on
   // the cyan platform at screen mid-bottom, head well clear of the nav.
   pos: { x: 0, y: 2.1, z: 4.2 },
-  look: { x: 0, y: 2.3, z: 8 },
+  look: { x: 0, y: 1.5, z: 8 },
 }
 const PROJECTS_STOP: CameraStop = {
   pos: { x: 0, y: 1.6, z: 3.5 },
@@ -105,7 +105,7 @@ export function createTimeline(): MasterTimeline {
     })
     const heroDisc = new Mesh(heroDiscGeo, heroDiscMat)
     heroDisc.name = 'HeroGroundDisc'
-    heroDisc.position.set(0, 0.005, 0.6)
+    heroDisc.position.set(-0.1, 0.005, -0.5)
     scene.add(heroDisc)
 
     // Snap camera to the hero stop up front
@@ -143,22 +143,22 @@ export function createTimeline(): MasterTimeline {
     // peak (reveal=1) lands inside the visible #about + #projects sections,
     // and only flips back to jersey (reveal=0) once the camera has begun
     // flying to the mailroom. Approximate fractions of total scroll:
-    //   hero hold  0.00 → 0.10
-    //   hero→about 0.10 → 0.22  (reveal climbs 0 → 1 over the back 75%)
-    //   about hold 0.22 → 0.40  (reveal stays at 1 — shirt visible)
-    //   about→proj 0.40 → 0.45  (camera move only, reveal still 1)
-    //   proj hold  0.45 → 0.78  (reveal stays at 1, biggest section)
-    //   proj→cont  0.78 → 0.92  (reveal flips 1 → 0 over the front 70%)
-    //   cont hold  0.92 → 0.96
-    //   cont→foot  0.96 → 1.00
-    const T_HERO_HOLD = 0.10
+    //   hero hold  0.00 → 0.08
+    //   hero→about 0.08 → 0.20  (reveal climbs 0 → 1 over the back 75%)
+    //   about hold 0.20 → 0.36  (reveal stays at 1 — shirt visible)
+    //   about→proj 0.36 → 0.41  (camera move only, reveal still 1)
+    //   proj hold  0.41 → 0.71  (reveal stays at 1, biggest section)
+    //   proj→cont  0.71 → 0.85  (reveal flips 1 → 0 over the front 70%)
+    //   cont hold  0.85 → 0.93
+    //   cont→foot  0.93 → 1.00
+    const T_HERO_HOLD = 0.08
     const T_HERO_ABOUT = 0.12
-    const T_ABOUT_HOLD = 0.18
+    const T_ABOUT_HOLD = 0.16
     const T_ABOUT_PROJECTS = 0.05
-    const T_PROJECTS_HOLD = 0.33
+    const T_PROJECTS_HOLD = 0.30
     const T_PROJECTS_CONTACT = 0.14
-    const T_CONTACT_HOLD = 0.04
-    const T_CONTACT_FOOTER = 0.04
+    const T_CONTACT_HOLD = 0.08
+    const T_CONTACT_FOOTER = 0.07
 
     const heroAboutAt = T_HERO_HOLD
     const aboutProjectsAt = heroAboutAt + T_HERO_ABOUT + T_ABOUT_HOLD

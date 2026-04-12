@@ -102,15 +102,23 @@ export function createDeskMonitorTexture(): DeskMonitor {
 
   draw()
 
+  // Throttle texture updates to ~10fps — code scrolling doesn't need 60fps
+  const UPDATE_INTERVAL = 0.1 // seconds
+  let timeSinceUpdate = 0
+
   const update = (dt: number): void => {
-    const delta = SCROLL_SPEED * dt
+    timeSinceUpdate += dt
+    if (timeSinceUpdate < UPDATE_INTERVAL) return
+    const elapsed = timeSinceUpdate
+    timeSinceUpdate = 0
+
+    const delta = SCROLL_SPEED * elapsed
     for (const line of lines) {
       line.y -= delta
     }
     // Recycle lines that have drifted off the top.
     for (const line of lines) {
       if (line.y + line.height < -LINE_HEIGHT) {
-        // Find the bottom-most line to append after it.
         let maxY = -Infinity
         for (const l of lines) {
           if (l.y > maxY) maxY = l.y
