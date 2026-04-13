@@ -467,14 +467,16 @@ export function createTimeline(): MasterTimeline {
     triggers.push(
       ScrollTrigger.create({
         trigger: '#about',
-        start: 'top 70%',
-        end: 'top 10%',
+        start: 'top 50%',
+        end: 'top 5%',
         scrub: 1.2,
         onUpdate: (self) => {
           holoExt.setLaserProgress?.(self.progress)
           // Update scan percentage readout
           if (scanPctEl) {
-            scanPctEl.textContent = `${Math.round(self.progress * 100)}%`
+            const pct = Math.round(self.progress * 100)
+            scanPctEl.textContent = `${pct}%`
+            scanPctEl.style.color = pct >= 100 ? '#4ad8ff' : ''
           }
         },
       }),

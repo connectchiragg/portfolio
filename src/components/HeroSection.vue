@@ -36,7 +36,7 @@ const nameParts = computed(() => {
         <h1
           class="font-display text-[3.6rem] font-medium leading-[0.92] tracking-[-0.02em] text-bone sm:text-7xl lg:text-[6.5rem]"
         >
-          {{ nameParts.first }}<span class="text-ember">.</span><br v-if="nameParts.rest" />{{ nameParts.rest }}
+          {{ nameParts.first }}<br v-if="nameParts.rest" />{{ nameParts.rest }}
         </h1>
 
         <div class="mt-8 flex items-center gap-4 font-mono text-xs uppercase tracking-[0.22em] text-ash">
