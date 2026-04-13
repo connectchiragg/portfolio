@@ -25,7 +25,6 @@ import {
   DoubleSide,
   Group,
   Mesh,
-  MeshBasicMaterial,
   PointLight,
   TorusGeometry,
   ShaderMaterial,

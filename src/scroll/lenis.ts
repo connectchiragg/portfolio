@@ -24,7 +24,7 @@ import type { ScrollContext } from '../three/contracts'
 gsap.registerPlugin(ScrollTrigger)
 
 export function createScroll(): ScrollContext {
-  const lenis = new Lenis({ smoothWheel: true, lerp: 0.1 })
+  const lenis = new Lenis({ smoothWheel: true, lerp: 0.12 })
 
   const tickCallbacks = new Set<() => void>()
 

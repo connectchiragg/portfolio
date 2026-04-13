@@ -286,9 +286,5 @@ onBeforeUnmount(() => {
   50% { opacity: 0; }
 }
 
-.connector-lines {
-  width: 100%;
-  height: 100%;
-}
 
 </style>

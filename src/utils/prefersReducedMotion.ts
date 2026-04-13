@@ -20,24 +20,3 @@ export function prefersReducedMotion(): boolean {
   return window.matchMedia(QUERY).matches
 }
 
-/**
- * Subscribes to changes in the reduced-motion preference.
- * Returns an unsubscribe function.
- */
-export function watchReducedMotion(cb: (reduced: boolean) => void): () => void {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return () => {
-      // no-op unsubscribe
-    }
-  }
-
-  const mql = window.matchMedia(QUERY)
-  const handler = (ev: MediaQueryListEvent): void => {
-    cb(ev.matches)
-  }
-  mql.addEventListener('change', handler)
-
-  return () => {
-    mql.removeEventListener('change', handler)
-  }
-}

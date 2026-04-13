@@ -33,55 +33,68 @@ import { projects } from '../data/projects'
         </p>
       </div>
 
-      <div class="grid gap-x-6 gap-y-16 sm:grid-cols-2">
-        <a
-          v-for="p in projects"
-          :key="p.title"
-          :href="p.href"
-          class="group relative block"
-        >
-          <div class="relative overflow-hidden border border-bone/10 bg-graphite">
-            <img
-              :src="p.screenshot"
-              :alt="p.title + ' screenshot'"
-              class="aspect-[8/5] w-full object-cover transition duration-700 group-hover:scale-[1.03]"
-              loading="lazy"
-            />
-            <div
-              class="absolute inset-0 bg-gradient-to-t from-char/80 via-char/0 to-char/0"
-              aria-hidden="true"
-            />
-            <div
-              class="absolute left-4 top-4 font-mono text-[10px] uppercase tracking-[0.24em] text-bone/70"
-            >
-              {{ p.index }} · {{ p.year }}
-            </div>
-          </div>
-
-          <div class="mt-5 flex items-start justify-between gap-4">
-            <div>
-              <h3
-                class="font-display text-2xl font-medium tracking-tight text-bone group-hover:text-ember"
+      <div class="relative">
+        <div class="grid gap-x-6 gap-y-16 sm:grid-cols-2 blur-[6px] select-none pointer-events-none">
+          <div
+            v-for="p in projects"
+            :key="p.title"
+            class="relative block"
+          >
+            <div class="relative overflow-hidden border border-bone/10 bg-graphite">
+              <img
+                :src="p.screenshot"
+                :alt="p.title + ' screenshot'"
+                class="aspect-[8/5] w-full object-cover"
+                loading="lazy"
+              />
+              <div
+                class="absolute inset-0 bg-gradient-to-t from-char/80 via-char/0 to-char/0"
+                aria-hidden="true"
+              />
+              <div
+                class="absolute left-4 top-4 font-mono text-[10px] uppercase tracking-[0.24em] text-bone/70"
               >
-                {{ p.title }}
-              </h3>
-              <p class="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ash">
-                {{ p.tagline }}
-              </p>
-              <p class="mt-3 max-w-md text-sm leading-relaxed text-bone/65">
-                {{ p.desc }}
-              </p>
-              <div class="mt-4 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ash">
-                <span v-for="t in p.tags" :key="t">— {{ t }}</span>
+                {{ p.index }} · {{ p.year }}
               </div>
             </div>
-            <span
-              class="mt-2 grid h-9 w-9 flex-none place-items-center rounded-full border border-bone/20 text-bone/60 transition group-hover:border-ember group-hover:text-ember"
-            >
-              ↗
-            </span>
+
+            <div class="mt-5 flex items-start justify-between gap-4">
+              <div>
+                <h3
+                  class="font-display text-2xl font-medium tracking-tight text-bone"
+                >
+                  {{ p.title }}
+                </h3>
+                <p class="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ash">
+                  {{ p.tagline }}
+                </p>
+                <p class="mt-3 max-w-md text-sm leading-relaxed text-bone/65">
+                  {{ p.desc }}
+                </p>
+                <div class="mt-4 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ash">
+                  <span v-for="t in p.tags" :key="t">-- {{ t }}</span>
+                </div>
+              </div>
+              <span
+                class="mt-2 grid h-9 w-9 flex-none place-items-center rounded-full border border-bone/20 text-bone/60"
+              >
+                ↗
+              </span>
+            </div>
           </div>
-        </a>
+        </div>
+
+        <!-- Coming Soon overlay -->
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="text-center">
+            <p class="font-display text-6xl font-medium tracking-[-0.02em] text-bone sm:text-8xl">
+              Coming Soon<span class="text-ember">.</span>
+            </p>
+            <p class="mt-4 font-mono text-[11px] uppercase tracking-[0.28em] text-ash">
+              Projects are being curated
+            </p>
+          </div>
+        </div>
       </div>
 
     </div>

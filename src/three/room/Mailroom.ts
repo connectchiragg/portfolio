@@ -21,8 +21,6 @@ import {
   Vector3,
   BoxGeometry,
   PlaneGeometry,
-  SphereGeometry,
-  CylinderGeometry,
   MeshStandardMaterial,
   CanvasTexture,
   SRGBColorSpace,
@@ -155,55 +153,6 @@ function makeEnvelopeTexture(): CanvasTexture {
   ctx.fillRect(20, 122, 100, 3)
   ctx.fillRect(20, 134, 60, 3)
 
-  const tex = new CanvasTexture(c)
-  tex.colorSpace = SRGBColorSpace
-  tex.magFilter = LinearFilter
-  tex.minFilter = LinearFilter
-  return tex
-}
-
-// Soccer ball texture — white with dark pentagon spots laid out in a
-// rough truncated-icosahedron pattern via canvas. Wraps onto a sphere.
-function makeFootballTexture(): CanvasTexture {
-  const c = document.createElement('canvas')
-  c.width = 512
-  c.height = 256
-  const ctx = c.getContext('2d')!
-  ctx.fillStyle = '#f5efe2'
-  ctx.fillRect(0, 0, 512, 256)
-  ctx.fillStyle = '#1a1410'
-  // 12 pentagon spots scattered across the equirectangular map
-  const spots: Array<[number, number, number]> = [
-    [60, 60, 22],
-    [180, 50, 24],
-    [310, 70, 22],
-    [430, 55, 23],
-    [110, 130, 26],
-    [240, 130, 28],
-    [370, 130, 26],
-    [500, 130, 25],
-    [60, 200, 22],
-    [200, 210, 24],
-    [330, 200, 22],
-    [460, 210, 23],
-  ]
-  for (const [cx, cy, r] of spots) {
-    ctx.beginPath()
-    for (let i = 0; i < 5; i++) {
-      const a = -Math.PI / 2 + (i * Math.PI * 2) / 5
-      const px = cx + Math.cos(a) * r
-      const py = cy + Math.sin(a) * r
-      if (i === 0) ctx.moveTo(px, py)
-      else ctx.lineTo(px, py)
-    }
-    ctx.closePath()
-    ctx.fill()
-  }
-  // Subtle seam noise
-  for (let i = 0; i < 800; i++) {
-    ctx.fillStyle = `rgba(40,30,20,${Math.random() * 0.18})`
-    ctx.fillRect(Math.random() * 512, Math.random() * 256, 1, 1)
-  }
   const tex = new CanvasTexture(c)
   tex.colorSpace = SRGBColorSpace
   tex.magFilter = LinearFilter

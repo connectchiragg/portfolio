@@ -72,7 +72,7 @@ export function buildAboutToProjects(
       r: target.r,
       g: target.g,
       b: target.b,
-      ease: 'power1.inOut',
+      ease: 'power2.inOut',
       duration,
     },
     at,
@@ -92,7 +92,7 @@ export function buildAboutToProjects(
     tod,
     {
       v: 0.3,
-      ease: 'power1.inOut',
+      ease: 'power2.inOut',
       duration,
       onUpdate: () => lights.setTimeOfDay(tod.v),
     },

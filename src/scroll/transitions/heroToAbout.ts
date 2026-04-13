@@ -84,7 +84,7 @@ export function buildHeroToAbout(
       r: target.r,
       g: target.g,
       b: target.b,
-      ease: 'power1.inOut',
+      ease: 'power2.inOut',
       duration,
     },
     at,

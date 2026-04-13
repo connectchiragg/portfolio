@@ -42,7 +42,7 @@ export function buildProjectsToContact(
       r: target.r,
       g: target.g,
       b: target.b,
-      ease: 'power1.inOut',
+      ease: 'power2.inOut',
       duration,
     },
     at,
@@ -54,7 +54,7 @@ export function buildProjectsToContact(
     tod,
     {
       v: 0.85,
-      ease: 'power1.inOut',
+      ease: 'power2.inOut',
       duration,
       onUpdate: () => lights.setTimeOfDay(tod.v),
     },
@@ -67,7 +67,7 @@ export function buildProjectsToContact(
     reveal,
     {
       v: 0,
-      ease: 'power3.inOut',
+      ease: 'power2.inOut',
       duration,
       onUpdate: () => hologram.setReveal(reveal.v),
     },

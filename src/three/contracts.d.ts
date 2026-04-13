@@ -81,6 +81,10 @@ export interface RoomLights {
   attach: (scene: ThreeScene) => void
   /** Animates intensity for time-of-day transitions (0..1 = night..day) */
   setTimeOfDay: (t: number) => void
+  /** Set the about-section light intensity (0..1) */
+  setAboutLightLevel?: (v: number) => void
+  /** Set the mailroom light intensity (0..1) */
+  setMailroomLightLevel?: (v: number) => void
 }
 
 /** Owned by W1: src/three/lights.ts */
@@ -110,9 +114,13 @@ export interface Avatar {
    * (different pose than the wardrobe-reveal jersey). Hides the scan
    * duo entirely while on. Used by the contact-section state.
    */
+  /** Scroll-driven laser ring sweep progress (0→1) */
+  setLaserProgress?: (p: number) => void
   setShowContact?: (on: boolean) => void
   /** Toggle the hero thinking-pose model visibility */
   setHeroThinking?: (on: boolean) => void
+  /** Set the about-section rotation angle */
+  setAboutRotation?: (angle: number) => void
   /** Optional per-frame update — orchestrator wires this into sceneCtx.onTick */
   tick?: (dt: number, elapsed: number) => void
   dispose: () => void
@@ -129,6 +137,8 @@ export interface Hologram {
   bindAnalyser: (analyser: AnalyserNode) => void
   /** 0..1 reveal (hidden → fully on) — driven by the GSAP timeline */
   setReveal: (v: number) => void
+  /** Scroll-driven laser ring sweep progress (0→1) */
+  setLaserProgress?: (p: number) => void
   /** Optional per-frame update — orchestrator wires this into sceneCtx.onTick */
   tick?: (dt: number, elapsed: number) => void
   dispose: () => void

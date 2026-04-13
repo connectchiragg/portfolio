@@ -109,9 +109,6 @@ onMounted(async () => {
   scene.scene.add(holo.root)
   hologram.value = holo
 
-  // DEBUG: temporary global to verify camera position
-  ;(window as unknown as Record<string, unknown>).__camera = scene.camera
-  ;(window as unknown as Record<string, unknown>).__avatar = loadedAvatar
 
 
 

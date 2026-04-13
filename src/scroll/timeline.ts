@@ -145,7 +145,7 @@ export function createTimeline(): MasterTimeline {
         trigger: 'main',
         start: 'top top',
         end: 'bottom bottom',
-        scrub: 1.5,
+        scrub: 1.0,
       },
     })
     masterTl = tl
@@ -166,8 +166,8 @@ export function createTimeline(): MasterTimeline {
     const T_HERO_HOLD = 0.08
     const T_HERO_ABOUT = 0.12
     const T_ABOUT_HOLD = 0.16
-    const T_ABOUT_PROJECTS = 0.05
-    const T_PROJECTS_HOLD = 0.30
+    const T_ABOUT_PROJECTS = 0.10
+    const T_PROJECTS_HOLD = 0.25
     const T_PROJECTS_CONTACT = 0.14
     const T_CONTACT_HOLD = 0.08
     const T_CONTACT_FOOTER = 0.07
@@ -262,7 +262,7 @@ export function createTimeline(): MasterTimeline {
         r: footerBg.r,
         g: footerBg.g,
         b: footerBg.b,
-        ease: 'power1.inOut',
+        ease: 'power2.inOut',
         duration: T_CONTACT_FOOTER,
       },
       footerAt,
@@ -272,7 +272,7 @@ export function createTimeline(): MasterTimeline {
       todOut,
       {
         v: 0,
-        ease: 'power1.inOut',
+        ease: 'power2.inOut',
         duration: T_CONTACT_FOOTER,
         onUpdate: () => lights.setTimeOfDay(todOut.v),
       },
@@ -304,29 +304,15 @@ export function createTimeline(): MasterTimeline {
     // state functions below MUST NOT call hologram.setReveal — that would
     // fight the scrubbed tween every frame.
 
-    // Cast once for the optional setShowContact + setHeroThinking
-    // extensions on Avatar.
-    const avatarExt = avatar as Avatar & {
-      setShowContact?: (on: boolean) => void
-      setHeroThinking?: (on: boolean) => void
-    }
-    // Cast once for the optional setAboutLightLevel + setMailroomLightLevel
-    // extensions on RoomLights.
-    const lightsExt = lights as RoomLights & {
-      setAboutLightLevel?: (v: number) => void
-      setMailroomLightLevel?: (v: number) => void
-    }
 
     let heroExitDone = false
-    let aboutActive = false
 
     const setHeroState = (): void => {
       heroExitDone = false // re-enable the exit tick for next scroll
-      aboutActive = false
       hologram.setReveal(0) // hide platform + grid
       fadeToWarm()
-      lightsExt.setAboutLightLevel?.(0)
-      lightsExt.setMailroomLightLevel?.(0)
+      lights.setAboutLightLevel?.(0)
+      lights.setMailroomLightLevel?.(0)
       room.root.visible = true
       // Restore room Y in case the exit lift left it offscreen
       room.root.position.y = 0
@@ -344,8 +330,8 @@ export function createTimeline(): MasterTimeline {
       avatar.root.position.set(-0.1, 0, -0.5)
       avatar.root.rotation.set(0, Math.PI, 0)
       avatar.play('standing')
-      avatarExt.setShowContact?.(false)
-      avatarExt.setHeroThinking?.(true)
+      avatar.setShowContact?.(false)
+      avatar.setHeroThinking?.(true)
       // Hologram visibility is owned by the wide-range about trigger
       // below — do NOT toggle it here, otherwise the conjoining circular
       // reveal flickers off the moment hero re-enters.
@@ -363,10 +349,9 @@ export function createTimeline(): MasterTimeline {
     const setAboutState = (): void => {
       // Stop the hero exit tick from touching the avatar — about owns it now
       heroExitDone = true
-      aboutActive = true
       fadeToAbout()
-      lightsExt.setAboutLightLevel?.(1)
-      lightsExt.setMailroomLightLevel?.(0)
+      lights.setAboutLightLevel?.(1)
+      lights.setMailroomLightLevel?.(0)
       room.root.visible = false
       heroDisc.visible = false
       // Re-parent avatar to scene root (may have been inside mailroom)
@@ -376,8 +361,8 @@ export function createTimeline(): MasterTimeline {
       avatar.root.position.set(0, 0.15, 8)
       avatar.root.rotation.set(0, Math.PI, 0)
       avatar.play('standing')
-      avatarExt.setShowContact?.(false)
-      avatarExt.setHeroThinking?.(false)
+      avatar.setShowContact?.(false)
+      avatar.setHeroThinking?.(false)
       hologram.root.position.y = 0
       hologram.setReveal(1) // show platform + grid
       // hologram.root.visible owned by wide-range about trigger.
@@ -385,11 +370,10 @@ export function createTimeline(): MasterTimeline {
     }
 
     const setProjectsState = (): void => {
-      aboutActive = false
       hologram.setReveal(0) // hide platform + grid
       fadeToWarm()
-      lightsExt.setAboutLightLevel?.(0)
-      lightsExt.setMailroomLightLevel?.(0)
+      lights.setAboutLightLevel?.(0)
+      lights.setMailroomLightLevel?.(0)
       room.root.visible = false
       // Re-parent avatar to scene root (may have been inside mailroom)
       scene.add(avatar.root)
@@ -398,8 +382,8 @@ export function createTimeline(): MasterTimeline {
       // tiny silhouette peeking between cards (worse than not being
       // there at all). Hide him for projects — the cards are the star.
       avatar.root.visible = false
-      avatarExt.setShowContact?.(false)
-      avatarExt.setHeroThinking?.(false)
+      avatar.setShowContact?.(false)
+      avatar.setHeroThinking?.(false)
       // hologram.root.visible owned by wide-range about trigger.
       // Pre-show mailroom so it's ready when the camera flies toward it
       // during projectsToContact — avoids the pop.
@@ -408,9 +392,8 @@ export function createTimeline(): MasterTimeline {
     }
 
     const setContactState = (): void => {
-      aboutActive = false
-      lightsExt.setAboutLightLevel?.(0)
-      lightsExt.setMailroomLightLevel?.(1)
+      lights.setAboutLightLevel?.(0)
+      lights.setMailroomLightLevel?.(1)
       room.root.visible = false
       avatar.root.visible = true
       // Parent avatar inside the mailroom group so it lifts as one unit.
@@ -419,8 +402,8 @@ export function createTimeline(): MasterTimeline {
       avatar.root.position.set(0.55, 0, 0)
       avatar.root.rotation.set(0, -0.42, 0)
       avatar.play('standing')
-      avatarExt.setShowContact?.(true)
-      avatarExt.setHeroThinking?.(false)
+      avatar.setShowContact?.(true)
+      avatar.setHeroThinking?.(false)
       mailroom.visible = true
       heroDisc.visible = false
     }
@@ -454,7 +437,7 @@ export function createTimeline(): MasterTimeline {
         room.root.visible = false
         avatar.root.visible = false
         heroDisc.visible = false
-        avatarExt.setHeroThinking?.(false)
+        avatar.setHeroThinking?.(false)
         heroExitDone = true
       }
     })
@@ -462,16 +445,15 @@ export function createTimeline(): MasterTimeline {
     // Scroll-driven laser ring — sweeps up the avatar as the user
     // scrolls through the about section. Purely visual, doesn't
     // change the outfit (outfit scan is rotation-driven in Hologram tick).
-    const holoExt = hologram as Hologram & { setLaserProgress?: (p: number) => void }
     const scanPctEl = document.querySelector('#scan-pct') as HTMLElement | null
     triggers.push(
       ScrollTrigger.create({
         trigger: '#about',
         start: 'top 50%',
         end: 'top 5%',
-        scrub: 1.2,
+        scrub: 1.0,
         onUpdate: (self) => {
-          holoExt.setLaserProgress?.(self.progress)
+          hologram.setLaserProgress?.(self.progress)
           // Update scan percentage readout
           if (scanPctEl) {
             const pct = Math.round(self.progress * 100)
