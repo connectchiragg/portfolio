@@ -75,7 +75,9 @@ export function buildHeroToAbout(
     at,
   )
 
-  // Background colour: warm dark room → deep cyan void
+  // Background colour: warm dark room → deep cyan void.
+  // Front-load so the brownish room colour is gone before the camera
+  // lifts above the room ceiling and reveals the bare background.
   const bg = scene.background as Color
   const target = new Color('#060a26')
   tl.to(
@@ -84,8 +86,8 @@ export function buildHeroToAbout(
       r: target.r,
       g: target.g,
       b: target.b,
-      ease: 'power2.inOut',
-      duration,
+      ease: 'power4.out',
+      duration: duration * 0.5,
     },
     at,
   )
