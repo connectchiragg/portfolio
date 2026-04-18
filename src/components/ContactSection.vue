@@ -42,8 +42,8 @@ const emailDisplay = emailHref.replace(/^mailto:/, '')
   -->
   <section
     id="contact"
-    class="relative isolate overflow-hidden py-36"
-    style="background: linear-gradient(to right, rgba(10,8,7,0.92) 0%, rgba(10,8,7,0.78) 38%, rgba(10,8,7,0.0) 68%, rgba(10,8,7,0.0) 100%);"
+    class="relative isolate overflow-hidden pt-36 pb-36"
+    style="background: linear-gradient(to bottom, rgba(10,8,7,0.95) 0%, rgba(10,8,7,0.4) 15%, transparent 30%), linear-gradient(to right, rgba(10,8,7,0.92) 0%, rgba(10,8,7,0.78) 38%, rgba(10,8,7,0.0) 68%, rgba(10,8,7,0.0) 100%);"
   >
     <div class="relative mx-auto max-w-6xl px-6">
       <div class="grid items-center gap-16 lg:grid-cols-12">

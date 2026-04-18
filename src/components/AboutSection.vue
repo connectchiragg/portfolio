@@ -56,7 +56,7 @@ onBeforeUnmount(() => {
 <template>
   <section
     id="about"
-    class="relative isolate pt-36 pb-[30vh] text-bone"
+    class="relative isolate pt-56 pb-[30vh] text-bone"
     style="background: linear-gradient(to bottom, transparent 0%, transparent 52%, rgba(6,10,38,0.5) 58%, rgba(8,9,22,0.75) 63%, rgba(10,8,7,0.9) 69%, rgba(10,8,7,1) 75%, rgba(10,8,7,1) 100%);"
   >
     <div class="relative mx-auto max-w-6xl px-6">

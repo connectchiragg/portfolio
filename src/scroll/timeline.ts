@@ -449,7 +449,7 @@ export function createTimeline(): MasterTimeline {
     triggers.push(
       ScrollTrigger.create({
         trigger: '#about',
-        start: 'top 25%',
+        start: 'top 45%',
         end: 'top -15%',
         scrub: 1.0,
         onUpdate: (self) => {

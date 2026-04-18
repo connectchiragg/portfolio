@@ -507,6 +507,7 @@ export async function loadRoom(loader: Loader): Promise<Room> {
     football = buildFootballPrimitive()
     football.position.set(0.9, 0, 0.6)
   }
+  football.visible = false
   root.add(football)
 
   // Manga stack removed per user request
