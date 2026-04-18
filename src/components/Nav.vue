@@ -11,14 +11,6 @@ const links = [
 <template>
   <header class="fixed top-5 left-0 right-0 z-50 px-5">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
-      <a
-        href="#top"
-        class="grid h-11 w-11 place-items-center border border-bone/30 bg-char/70 font-display text-sm font-medium text-bone backdrop-blur transition hover:border-ember hover:text-ember"
-        aria-label="Home"
-      >
-        CG
-      </a>
-
       <nav
         class="hidden items-center gap-1 border border-bone/15 bg-char/70 px-1 py-1 backdrop-blur md:flex"
       >
