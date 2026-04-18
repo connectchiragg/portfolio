@@ -478,39 +478,25 @@ export function createTimeline(): MasterTimeline {
         end: 'bottom top',
         onEnter: () => {
           hologram.root.visible = true
+          setAboutState()
         },
         onEnterBack: () => {
           hologram.root.visible = true
+          setAboutState()
         },
         onLeave: () => {
           hologram.root.visible = false
         },
         onLeaveBack: () => {
           hologram.root.visible = false
+          setHeroState()
         },
       }),
     )
 
-    triggers.push(
-      ScrollTrigger.create({
-        trigger: '#top',
-        start: 'top top',
-        end: 'bottom center',
-        onEnter: setHeroState,
-        onEnterBack: setHeroState,
-      }),
-    )
-
-    triggers.push(
-      ScrollTrigger.create({
-        trigger: '#about',
-        start: 'top center',
-        end: 'bottom center',
-        onEnter: setAboutState,
-        onEnterBack: setAboutState,
-        onLeaveBack: setHeroState,
-      }),
-    )
+    // Hero state is restored by the hologram trigger's onLeaveBack
+    // (when #about top scrolls back past 60%). No separate #top trigger
+    // needed — having two triggers calling setHeroState caused races.
 
     // ─── About section object lift ──────────────────────────────────────
     // GSAP owns all camera movement (hero→aboutTop→aboutFront→projects).
