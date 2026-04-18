@@ -449,8 +449,8 @@ export function createTimeline(): MasterTimeline {
     triggers.push(
       ScrollTrigger.create({
         trigger: '#about',
-        start: 'top 50%',
-        end: 'top 5%',
+        start: 'top 25%',
+        end: 'top -15%',
         scrub: 1.0,
         onUpdate: (self) => {
           hologram.setLaserProgress?.(self.progress)

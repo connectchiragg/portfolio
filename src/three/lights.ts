@@ -104,24 +104,8 @@ export function createRoomLights(): RoomLights {
   mailroomRimTarget.position.set(0, 1.2, 0.5)
   mailroomRim.target = mailroomRimTarget
 
-  // ─── About-section trio for the hologram platform (unchanged) ────────────
-  const aboutKey = new SpotLight('#ffffff', 0, 20, Math.PI / 5, 0.4, 1.0)
-  aboutKey.position.set(0, 4, 5)
-  const aboutKeyTarget = new Object3D()
-  aboutKeyTarget.position.set(0, 1.0, 8)
-  aboutKey.target = aboutKeyTarget
-
-  const aboutRim = new SpotLight('#4ad8ff', 0, 20, Math.PI / 4, 0.6, 1.0)
-  aboutRim.position.set(2, 2, 11)
-  const aboutRimTarget = new Object3D()
-  aboutRimTarget.position.set(0, 1.4, 8)
-  aboutRim.target = aboutRimTarget
-
-  const aboutFill = new SpotLight('#a8c4ff', 0, 20, Math.PI / 3, 0.7, 1.0)
-  aboutFill.position.set(-3, 1, 6)
-  const aboutFillTarget = new Object3D()
-  aboutFillTarget.position.set(0, 1.4, 8)
-  aboutFill.target = aboutFillTarget
+  // About-section lighting: avatar is lit only by the platform PointLight
+  // in Hologram.ts (cyan uplight from below). No additional spotlights.
 
   const attach = (scene: Scene): void => {
     scene.add(deskLamp)
@@ -131,12 +115,6 @@ export function createRoomLights(): RoomLights {
     scene.add(hemi)
     // Mailroom lights are NOT added to the scene — they're parented
     // to the mailroom group in ThreeCanvas so they move with the elevator.
-    scene.add(aboutKey)
-    scene.add(aboutKeyTarget)
-    scene.add(aboutRim)
-    scene.add(aboutRimTarget)
-    scene.add(aboutFill)
-    scene.add(aboutFillTarget)
   }
 
   // Night → dawn arc. Tuned so the hero (t=0) is unmistakably late-night
@@ -150,11 +128,8 @@ export function createRoomLights(): RoomLights {
     hemi.intensity = lerp(0.35, 0.55, k)
   }
 
-  const setAboutLightLevel = (v: number): void => {
-    const k = clamp01(v)
-    aboutKey.intensity = lerp(0, 6, k)
-    aboutRim.intensity = lerp(0, 4, k)
-    aboutFill.intensity = lerp(0, 2, k)
+  const setAboutLightLevel = (_v: number): void => {
+    // No-op: avatar lit only by platform PointLight in Hologram.ts
   }
 
   // Contact-section dedicated rig — only on while the camera is parked
