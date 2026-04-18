@@ -389,7 +389,7 @@ export async function loadRoom(loader: Loader): Promise<Room> {
     scaleAndGround(mug, 0.10)
     mug.scale.multiplyScalar(1.2)
     mug.scale.y *= 0.85
-    mug.position.set(0.55, 0.65, -0.1)
+    mug.position.set(0.35, 0.65, -0.55)
   } else {
     mug = buildMugPrimitive()
     mug.position.set(0.7, DESK_SURFACE_Y, 0.2)
