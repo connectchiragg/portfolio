@@ -668,9 +668,25 @@ export async function loadAvatar(
   // at the mixer can use this one).
   // Rotate only the about-section models (jersey + shirt scan duo).
   // Does not affect hero thinking or contact poses.
+  // Rotate duo around body center, not skeleton origin (right foot).
+  // Offset the models so the body centroid sits at (0,0,0) in the
+  // pivot group, then rotate the pivot.
+  const aboutPivot = new Group()
+  aboutPivot.name = 'AboutPivot'
+  root.add(aboutPivot)
+  // Re-parent duo models from root into pivot
+  root.remove(jerseyAboutModel)
+  root.remove(shirtModel)
+  aboutPivot.add(jerseyAboutModel)
+  aboutPivot.add(shirtModel)
+  // Skeleton origin is at right foot. Body center is slightly left.
+  // Shift models right so pivot origin = body center.
+  // We'll tune this value — start with 0.08.
+  jerseyAboutModel.position.set(-0.25, 0, 0)
+  shirtModel.position.set(-0.25, 0, 0)
+
   const setAboutRotation = (y: number): void => {
-    jerseyAboutModel.rotation.y = y
-    shirtModel.rotation.y = y
+    aboutPivot.rotation.y = y
   }
 
   return {
