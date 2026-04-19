@@ -17,6 +17,7 @@ import {
   PlaneGeometry,
 } from 'three'
 import type { Object3D, PerspectiveCamera, Scene as ThreeScene } from 'three'
+import { getTimeSlot } from '../../utils/timeSlot'
 
 interface GodRaysHandle {
   object: Object3D
@@ -61,8 +62,16 @@ export function createGodRays(
   const pitch = Math.atan2(dy, horizontal) // downward negative
   const yaw = Math.atan2(dx, dz)
 
-  const rayColor = new Color('#a8c4ff')
-  const slabCount = 5
+  // Adapt ray color + intensity to time of day
+  const { label: slot } = getTimeSlot()
+  const isNoon = slot === 'Noon'
+  const isDaytime = ['Morning', 'Afternoon', 'Dawn'].includes(slot)
+  const isEvening = slot === 'Evening'
+  const rayColor = new Color(
+    isNoon ? '#fff4d0' : isDaytime ? '#ffe0a0' : isEvening ? '#ffa060' : '#a8c4ff',
+  )
+  const baseOpacity = isNoon ? 0.5 : isDaytime ? 0.10 : isEvening ? 0.08 : 0.05
+  const slabCount = isNoon ? 12 : isDaytime ? 7 : 5
   const meshes: Mesh[] = []
   const materials: MeshBasicMaterial[] = []
   const geometries: PlaneGeometry[] = []
@@ -74,7 +83,7 @@ export function createGodRays(
     const mat = new MeshBasicMaterial({
       color: rayColor,
       transparent: true,
-      opacity: 0.05,
+      opacity: baseOpacity,
       blending: AdditiveBlending,
       depthWrite: false,
     })

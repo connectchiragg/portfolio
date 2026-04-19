@@ -101,6 +101,11 @@ export function createTimeline(): MasterTimeline {
     const { sceneCtx, room, avatar, hologram, lights, mailroom } = deps
     const { scene, camera } = sceneCtx
 
+    // Force scroll to top before building the timeline — prevents the
+    // scrubbed ScrollTrigger from reading a stale browser-restored
+    // scroll position and starting the camera mid-scene.
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+
     // Initial scene background (cream/warm dark room)
     scene.background = new Color('#1a1410')
 

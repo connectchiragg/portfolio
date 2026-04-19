@@ -134,9 +134,15 @@ function buildRoomShell(): Group {
   const skyCtx = skyCanvas.getContext('2d')!
   const { label: slotLabel, sky } = getTimeSlot()
   const grad = skyCtx.createLinearGradient(0, 0, 0, SKY_H)
-  grad.addColorStop(0, sky.top)
-  grad.addColorStop(0.5, sky.mid)
-  grad.addColorStop(1, sky.bot)
+  if (sky.window) {
+    // Single solid window color (e.g. bright white for noon)
+    grad.addColorStop(0, sky.window)
+    grad.addColorStop(1, sky.window)
+  } else {
+    grad.addColorStop(0, sky.top)
+    grad.addColorStop(0.5, sky.mid)
+    grad.addColorStop(1, sky.bot)
+  }
   skyCtx.fillStyle = grad
   skyCtx.fillRect(0, 0, SKY_W, SKY_H)
   // Crisp stars for night slots
@@ -166,6 +172,44 @@ function buildRoomShell(): Group {
   )
   glow.position.set(-1.6, 3.0, -2.98)
   group.add(glow)
+
+  // Bright window glow for daytime — radial gradient so edges blend softly
+  if (['Morning', 'Noon', 'Afternoon', 'Dawn', 'Evening'].includes(slotLabel)) {
+    const glowIntensity = slotLabel === 'Noon' ? 0.95
+      : slotLabel === 'Morning' || slotLabel === 'Afternoon' ? 0.5
+      : 0.3
+    const glowTint = slotLabel === 'Dawn' || slotLabel === 'Evening' ? '#ffb060' : '#fffae0'
+
+    const gc = document.createElement('canvas')
+    gc.width = 256
+    gc.height = 256
+    const gx = gc.getContext('2d')!
+    const rg = gx.createRadialGradient(128, 128, 0, 128, 128, 128)
+    rg.addColorStop(0, 'rgba(255, 255, 255, 1)')
+    rg.addColorStop(0.25, 'rgba(255, 255, 240, 0.8)')
+    rg.addColorStop(0.5, 'rgba(255, 250, 230, 0.3)')
+    rg.addColorStop(0.7, 'rgba(255, 250, 220, 0.05)')
+    rg.addColorStop(0.85, 'rgba(0, 0, 0, 0)')
+    rg.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    gx.fillStyle = rg
+    gx.fillRect(0, 0, 256, 256)
+    const glowTex = new CanvasTexture(gc)
+    glowTex.colorSpace = SRGBColorSpace
+
+    const bloomMesh = new Mesh(
+      new PlaneGeometry(2.3, 2.4),
+      new MeshBasicMaterial({
+        map: glowTex,
+        color: glowTint,
+        transparent: true,
+        opacity: glowIntensity,
+        blending: AdditiveBlending,
+        depthWrite: false,
+      }),
+    )
+    bloomMesh.position.set(-1.6, 3.0, -2.97)
+    group.add(bloomMesh)
+  }
 
   const frameMat = std(PALETTE.ink, 0.6)
   const addFrameBar = (w: number, h: number, x: number, y: number): void => {

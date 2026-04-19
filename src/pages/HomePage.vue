@@ -64,8 +64,7 @@ onBeforeUnmount(() => {
       class="loading-screen"
       :style="{
         background: `linear-gradient(to bottom, ${sky.top}, ${sky.mid}, ${sky.bot})`,
-        '--sky-accent': sky.bot,
-        '--sky-accent-dim': sky.mid,
+        '--sky-accent': sky.accent,
       } as any"
     >
       <div class="loading-content">

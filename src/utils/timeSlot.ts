@@ -7,6 +7,10 @@ export interface SkyPreset {
   top: string
   mid: string
   bot: string
+  /** Accent color for text on the sky gradient — must be readable */
+  accent: string
+  /** Override window sky color (when loading page bg should differ from window) */
+  window?: string
 }
 
 export interface TimeSlotInfo {
@@ -15,15 +19,15 @@ export interface TimeSlotInfo {
 }
 
 const SKY_PRESETS: Record<string, SkyPreset> = {
-  'Late Night':     { top: '#0a0a1a', mid: '#101030', bot: '#1a1a3a' },
-  'Night':          { top: '#0a0a1a', mid: '#101030', bot: '#1a1a3a' },
-  'Early Morning':  { top: '#1a1030', mid: '#3a2050', bot: '#6a3a5a' },
-  'Dawn':           { top: '#2a3060', mid: '#e08040', bot: '#ffb870' },
-  'Morning':        { top: '#3a7acc', mid: '#7ab8e8', bot: '#c8e0f0' },
-  'Noon':           { top: '#2060b0', mid: '#60a8e0', bot: '#a0d0f0' },
-  'Afternoon':      { top: '#4080c0', mid: '#80b8e0', bot: '#d0e8f8' },
-  'Evening':        { top: '#1a2040', mid: '#c06030', bot: '#ff8840' },
-  'Dusk':           { top: '#101028', mid: '#3a2050', bot: '#804060' },
+  'Late Night':     { top: '#0a0a1a', mid: '#101030', bot: '#1a1a3a', accent: '#4a6a9a' },
+  'Night':          { top: '#0a0a1a', mid: '#101030', bot: '#1a1a3a', accent: '#4a6a9a' },
+  'Early Morning':  { top: '#1a1030', mid: '#4a2848', bot: '#7a4a50', accent: '#c08aa0' },
+  'Dawn':           { top: '#2a3060', mid: '#e08040', bot: '#ffb870', accent: '#ffb870' },
+  'Morning':        { top: '#3a7acc', mid: '#7ab8e8', bot: '#c8e0f0', accent: '#2060a0' },
+  'Noon':           { top: '#2060b0', mid: '#60a8e0', bot: '#a0d0f0', accent: '#1a4a80', window: '#ffffff' },
+  'Afternoon':      { top: '#305a90', mid: '#6a9cc8', bot: '#b0d0e8', accent: '#2060a0' },
+  'Evening':        { top: '#2a3058', mid: '#8a5070', bot: '#d0a0a0', accent: '#d0a0a0' },
+  'Dusk':           { top: '#101028', mid: '#3a2050', bot: '#804060', accent: '#c07090' },
 }
 
 export function getTimeSlot(): TimeSlotInfo {
