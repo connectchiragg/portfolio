@@ -24,7 +24,6 @@ const sections: Record<string, SectionMeta> = {
 
 const TITLE_BASE = 'Chirag'
 const TYPING_SPEED = 80           // ms per character
-const FAVICON_FPS = 0 // use requestAnimationFrame instead
 
 let activeSection = 'hero'
 let animFrame = 0

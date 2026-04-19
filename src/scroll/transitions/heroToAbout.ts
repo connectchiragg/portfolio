@@ -40,7 +40,6 @@ export function buildHeroToAbout(
   duration: number,
 ): void {
   const { camera, scene, room, hologram, lookAt } = deps
-  const end = at + duration
 
   // Camera position. immediateRender: false so the from-state is NOT
   // written to camera.position when the tween is added — otherwise the
