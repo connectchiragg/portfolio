@@ -90,9 +90,13 @@ function scaleAndGround(obj: Object3D, targetHeight: number): number {
   return -box.min.y
 }
 
-async function tryLoad(loader: Loader, url: string): Promise<Group | null> {
+async function tryLoad(
+  loader: Loader,
+  url: string,
+  onProgress?: (e: ProgressEvent) => void,
+): Promise<Group | null> {
   try {
-    const result = await loader.load(url)
+    const result = await loader.load(url, onProgress)
     return result.scene
   } catch {
     console.warn(`[Room] GLB not found: ${url}, using primitive fallback`)
@@ -335,7 +339,10 @@ function buildWhiteboard(): Group {
 }
 
 // ─── Main loader ────────────────────────────────────────────────────────
-export async function loadRoom(loader: Loader): Promise<Room> {
+export async function loadRoom(
+  loader: Loader,
+  onProgress?: (e: ProgressEvent) => void,
+): Promise<Room> {
   const root = new Group()
   root.name = 'HeroRoom'
 
@@ -347,9 +354,9 @@ export async function loadRoom(loader: Loader): Promise<Room> {
     mugGlb,
     footballGlb,
   ] = await Promise.all([
-    tryLoad(loader, '/models/desk.glb'),
-    tryLoad(loader, '/models/mug.glb'),
-    tryLoad(loader, '/models/football.glb'),
+    tryLoad(loader, '/models/desk.glb', onProgress),
+    tryLoad(loader, '/models/mug.glb', onProgress),
+    tryLoad(loader, '/models/football.glb', onProgress),
   ])
 
   // ─── Desk ─────────────────────────────────────────────────────────────

@@ -23,6 +23,7 @@ const onReady = () => {
 }
 
 const start = () => {
+  window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
   started.value = true
   unlockScroll()
   startAudio()
@@ -68,7 +69,7 @@ onBeforeUnmount(() => {
   </Transition>
 
   <ThreeCanvas @progress="onProgress" @ready="onReady" />
-  <Nav />
+  <Nav :visible="started" />
   <main>
     <HeroSection />
     <AboutSection />

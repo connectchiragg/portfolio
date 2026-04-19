@@ -373,6 +373,7 @@ function prepareModel(
 export async function loadAvatar(
   loader: Loader,
   _glbUrl: string,
+  onProgress?: (e: ProgressEvent) => void,
 ): Promise<Avatar & { tick: (dt: number, elapsed: number) => void }> {
   // _glbUrl is ignored; the dual-mesh wardrobe reveal always loads both
   // characters from the canonical paths.
@@ -381,10 +382,10 @@ export async function loadAvatar(
 
   const [thinkingGltf, jerseyAboutGltf, shirtGltf, contactGltf] =
     await Promise.all([
-      loader.load(JERSEY_THINKING_GLB_URL),
-      loader.load(JERSEY_ABOUT_GLB_URL),
-      loader.load(SHIRT_GLB_URL),
-      loader.load(CONTACT_GLB_URL),
+      loader.load(JERSEY_THINKING_GLB_URL, onProgress),
+      loader.load(JERSEY_ABOUT_GLB_URL, onProgress),
+      loader.load(SHIRT_GLB_URL, onProgress),
+      loader.load(CONTACT_GLB_URL, onProgress),
     ])
   const thinkingModel = thinkingGltf.scene // hero (jersey + thinking pose)
   const jerseyAboutModel = jerseyAboutGltf.scene // about scan v=0 (matched-pose jersey)
@@ -468,7 +469,7 @@ export async function loadAvatar(
 
   let handBall: Group | null = null
   if (palmBones.length > 0) {
-    const footballGltf = await loader.load('/models/football.glb')
+    const footballGltf = await loader.load('/models/football.glb', onProgress)
     handBall = footballGltf.scene
     handBall.name = 'HandBall'
     // Scale to real football size (~22cm diameter)

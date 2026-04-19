@@ -30,6 +30,11 @@ import type {
 } from '../three/contracts'
 import type { Group, Object3D } from 'three'
 
+const emit = defineEmits<{
+  (e: 'progress', value: number): void
+  (e: 'ready'): void
+}>()
+
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const ready = ref(false)
 const ctx = shallowRef<SceneContext | null>(null)
@@ -61,14 +66,28 @@ onMounted(async () => {
   const ldr = createLoader(scene.renderer)
   loader.value = ldr
 
+  // ── Progress aggregator ──────────────────────────────────────────────
+  // Tracks bytes loaded/total per file, emits normalized 0→1 progress.
+  const fileProgress = new Map<string, { loaded: number; total: number }>()
+  const onFileProgress = (e: ProgressEvent) => {
+    const url = (e.target as XMLHttpRequest | undefined)?.responseURL ?? ''
+    fileProgress.set(url, { loaded: e.loaded, total: e.total || e.loaded })
+    let loaded = 0, total = 0
+    for (const v of fileProgress.values()) {
+      loaded += v.loaded
+      total += v.total
+    }
+    emit('progress', total > 0 ? Math.min(loaded / total, 1) : 0)
+  }
+
   // Phase 7C: a SINGLE avatar instance, parented directly to the scene so
   // the timeline state machine can teleport it freely between the chair
   // (hero), the hologram platform (about), the room standing position
   // (projects) and the mailroom (contact). The hologram applies its shader
   // material in-place via setReveal(>0) and restores on setReveal(0).
   const [loadedRoom, loadedAvatar] = await Promise.all([
-    loadRoom(ldr),
-    loadAvatar(ldr, '/models/character.glb'),
+    loadRoom(ldr, onFileProgress),
+    loadAvatar(ldr, '/models/character.glb', onFileProgress),
   ])
   room.value = loadedRoom
   avatar.value = loadedAvatar
@@ -214,7 +233,11 @@ onMounted(async () => {
   timeline.value = tl
 
   // Show canvas only after everything is initialized
-  requestAnimationFrame(() => { ready.value = true })
+  emit('progress', 1)
+  requestAnimationFrame(() => {
+    ready.value = true
+    emit('ready')
+  })
 })
 
 onBeforeUnmount(() => {

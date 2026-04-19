@@ -58,7 +58,7 @@ export interface LoadResult {
 
 export interface Loader {
   /** Loads a `.glb` from /public/models, returns root group + animations */
-  load: (url: string) => Promise<LoadResult>
+  load: (url: string, onProgress?: (e: ProgressEvent) => void) => Promise<LoadResult>
   /** Tear-down */
   dispose: () => void
 }

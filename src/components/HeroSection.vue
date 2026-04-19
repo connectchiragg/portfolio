@@ -2,6 +2,12 @@
 import { computed } from 'vue'
 import { profile } from '../data/profile'
 
+const quarter = computed(() => {
+  const now = new Date()
+  const q = Math.ceil((now.getMonth() + 1) / 3)
+  return `Q${q} / ${String(now.getFullYear()).slice(-2)}`
+})
+
 const nameParts = computed(() => {
   const parts = profile.name.split(' ')
   return {
@@ -52,10 +58,10 @@ const nameParts = computed(() => {
 
         <div class="mt-12 flex flex-wrap items-center gap-4">
           <a
-            href="#projects"
+            href="#"
             class="group inline-flex items-center gap-3 rounded-none border border-bone/80 bg-transparent px-7 py-4 font-mono text-[11px] font-medium uppercase tracking-[0.24em] text-bone transition hover:border-ember hover:text-ember"
           >
-            Selected work
+            Selected Home
             <span class="transition-transform group-hover:translate-x-1">→</span>
           </a>
           <a
@@ -64,6 +70,13 @@ const nameParts = computed(() => {
           >
             <span class="hair" />
             About
+          </a>
+          <a
+            href="#projects"
+            class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.24em] text-ash transition hover:text-bone"
+          >
+            <span class="hair" />
+            Work
           </a>
         </div>
 
@@ -75,7 +88,7 @@ const nameParts = computed(() => {
             <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-ember opacity-60" />
             <span class="relative inline-flex h-2 w-2 rounded-full bg-ember" />
           </span>
-          Open for work — Q2 / 26
+          Open for collaboration — {{ quarter }}
         </p>
       </div>
 

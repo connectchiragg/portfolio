@@ -25,8 +25,11 @@ export function createLoader(renderer: WebGLRenderer): Loader {
   loader.setKTX2Loader(ktx2)
   loader.setMeshoptDecoder(MeshoptDecoder)
 
-  const load = async (url: string): Promise<LoadResult> => {
-    const gltf = await loader.loadAsync(url)
+  const load = async (
+    url: string,
+    onProgress?: (e: ProgressEvent) => void,
+  ): Promise<LoadResult> => {
+    const gltf = await loader.loadAsync(url, onProgress)
     return {
       scene: gltf.scene,
       animations: gltf.animations,
