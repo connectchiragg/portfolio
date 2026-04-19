@@ -28,6 +28,7 @@ import {
 import type { Material } from 'three'
 import type { Loader, Room, RoomProps } from '../contracts'
 import { createDeskMonitorTexture } from './DeskMonitor'
+import { getTimeSlot, hasStars } from '../../utils/timeSlot'
 
 // ─── Palette ────────────────────────────────────────────────────────────
 const PALETTE = {
@@ -124,9 +125,44 @@ function buildRoomShell(): Group {
   sideWall.receiveShadow = true
   group.add(sideWall)
 
+  // Window sky — procedural gradient that matches the user's local time
+  const SKY_W = 256
+  const SKY_H = 512
+  const skyCanvas = document.createElement('canvas')
+  skyCanvas.width = SKY_W
+  skyCanvas.height = SKY_H
+  const skyCtx = skyCanvas.getContext('2d')!
+  const { label: slotLabel, sky } = getTimeSlot()
+  const grad = skyCtx.createLinearGradient(0, 0, 0, SKY_H)
+  grad.addColorStop(0, sky.top)
+  grad.addColorStop(0.5, sky.mid)
+  grad.addColorStop(1, sky.bot)
+  skyCtx.fillStyle = grad
+  skyCtx.fillRect(0, 0, SKY_W, SKY_H)
+  // Crisp stars for night slots
+  if (hasStars(slotLabel)) {
+    const starSeed = 42
+    const rng = (i: number) => {
+      const x = Math.sin(starSeed + i * 127.1) * 43758.5453
+      return x - Math.floor(x)
+    }
+    for (let i = 0; i < 30; i++) {
+      const sx = rng(i * 2) * SKY_W
+      const sy = rng(i * 2 + 1) * SKY_H * 0.65
+      const brightness = 0.5 + rng(i * 3) * 0.5
+      const radius = 1 + rng(i * 4) * 1.5
+      skyCtx.beginPath()
+      skyCtx.arc(sx, sy, radius, 0, Math.PI * 2)
+      skyCtx.fillStyle = `rgba(255, 255, 255, ${brightness})`
+      skyCtx.fill()
+    }
+  }
+  const skyTex = new CanvasTexture(skyCanvas)
+  skyTex.colorSpace = SRGBColorSpace
+
   const glow = new Mesh(
     new PlaneGeometry(1.6, 1.1),
-    new MeshBasicMaterial({ color: PALETTE.skyBlue, transparent: true, opacity: 0.85 }),
+    new MeshBasicMaterial({ map: skyTex, transparent: true, opacity: 0.9 }),
   )
   glow.position.set(-1.6, 3.0, -2.98)
   group.add(glow)

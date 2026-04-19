@@ -1,6 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { profile } from '../data/profile'
+import { getTimeSlot, fetchRegion } from '../utils/timeSlot'
+
+const { label: timeLabel } = getTimeSlot()
+const region = ref('')
+
+onMounted(async () => {
+  const detected = await fetchRegion()
+  region.value = detected ?? 'India'
+})
 
 const quarter = computed(() => {
   const now = new Date()
@@ -36,7 +45,7 @@ const nameParts = computed(() => {
         <p class="eyebrow mb-8 flex items-center gap-3">
           <span class="hair" />
           <span class="num">N° 00</span>
-          <span>Late Night, Bengaluru</span>
+          <span>{{ timeLabel }}{{ region ? ', ' + region : '' }}</span>
         </p>
 
         <h1
