@@ -69,6 +69,7 @@ onMounted(async () => {
   // ── Progress aggregator ──────────────────────────────────────────────
   // Tracks bytes loaded/total per file, emits normalized 0→1 progress.
   const fileProgress = new Map<string, { loaded: number; total: number }>()
+  let highWater = 0
   const onFileProgress = (e: ProgressEvent) => {
     const url = (e.target as XMLHttpRequest | undefined)?.responseURL ?? ''
     fileProgress.set(url, { loaded: e.loaded, total: e.total || e.loaded })
@@ -77,7 +78,10 @@ onMounted(async () => {
       loaded += v.loaded
       total += v.total
     }
-    emit('progress', total > 0 ? Math.min(loaded / total, 1) : 0)
+    const p = total > 0 ? Math.min(loaded / total, 1) : 0
+    // Never go backwards — new files joining the pool can temporarily drop the ratio
+    if (p > highWater) highWater = p
+    emit('progress', highWater)
   }
 
   // Phase 7C: a SINGLE avatar instance, parented directly to the scene so
