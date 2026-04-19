@@ -102,7 +102,7 @@ async function main() {
     return
   }
 
-  const uastcSupported = probeUastcSupport()
+  const uastcSupported = false // disabled: UASTC increases file size; Draco + textureResize is better for transfer
   if (!uastcSupported) {
     console.warn(
       '[optimise-models] ktx-software (toktx) not found on PATH — ' +
