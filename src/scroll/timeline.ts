@@ -433,12 +433,14 @@ export function createTimeline(): MasterTimeline {
       avatar.root.position.y = lift
       heroDisc.position.y = 0.005 + lift
       if (p >= 0.75) {
-        // Fully off-screen — hide and stop running
+        // Fully off-screen — hide room and transition to about
         room.root.visible = false
-        avatar.root.visible = false
         heroDisc.visible = false
         avatar.setHeroThinking?.(false)
         heroExitDone = true
+        // Now safe to show about — room is off-screen
+        hologram.root.visible = true
+        setAboutState()
       }
     })
 
