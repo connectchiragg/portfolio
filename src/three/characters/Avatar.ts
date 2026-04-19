@@ -683,8 +683,8 @@ export async function loadAvatar(
   // Skeleton origin is at right foot. Body center is slightly left.
   // Shift models right so pivot origin = body center.
   // We'll tune this value — start with 0.08.
-  jerseyAboutModel.position.set(-0.25, 0, 0)
-  shirtModel.position.set(-0.25, 0, 0)
+  jerseyAboutModel.position.set(0, 0, 0)
+  shirtModel.position.set(0, 0, 0)
 
   const setAboutRotation = (y: number): void => {
     aboutPivot.rotation.y = y

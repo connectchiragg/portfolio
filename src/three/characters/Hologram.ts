@@ -346,6 +346,20 @@ export function createHologram(avatar: Avatar): HologramTickable {
   laserRing.name = 'LaserScanRing'
   root.add(laserRing)
 
+  // Ring light — 12 PointLights inside the laser torus for reflection
+  const RING_LIGHTS = 12
+  const ringRadius = PLAT_RADIUS * 0.45
+  for (let i = 0; i < RING_LIGHTS; i++) {
+    const angle = (i / RING_LIGHTS) * Math.PI * 2
+    const rl = new PointLight(0x4ad8ff, 0.4, 0.3, 5)
+    rl.position.set(
+      Math.cos(angle) * ringRadius,
+      Math.sin(angle) * ringRadius,
+      0,
+    )
+    laserRing.add(rl)
+  }
+
   // Tron-style neon line grid floor (shader-based).
   const { mesh: grid, material: gridMaterial } = buildTronGrid()
   grid.name = 'HologramGrid'
