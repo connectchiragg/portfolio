@@ -92,16 +92,26 @@ export function buildHeroToAbout(
     at,
   )
 
-  // Phase 7+: scan reveal is now driven by a dedicated ScrollTrigger
-  // tied to the visible #about range (see timeline.ts), not the master
-  // timeline. The hero section must stay pure jersey with no scan band.
+  // Scrubbed reveal: ramp hologram (grid + platform + avatar scan) from
+  // 0 → 1 over the back 60% of the transition. Starts late so the hero
+  // section stays pure jersey with no scan band while the camera is still
+  // low. Using a scrubbed tween (not a discrete ScrollTrigger callback)
+  // ensures the reveal is perfectly smooth in both scroll directions and
+  // avoids the "snap to 1" that discrete setReveal(1) causes.
+  const reveal = { v: 0 }
+  tl.to(
+    reveal,
+    {
+      v: 1,
+      ease: 'power2.inOut',
+      duration: duration * 0.6,
+      immediateRender: false,
+      onUpdate: () => hologram.setReveal(reveal.v),
+    },
+    at + duration * 0.4,
+  )
 
   // Visibility toggles are handled in the per-section ScrollTriggers in
-  // timeline.ts (onEnter / onLeaveBack), not here. Scrubbed `tl.call` fires
-  // symmetrically on both forward + reverse passes, which makes it
-  // impossible to maintain a coherent visibility state across scrolling
-  // directions. Suppress the unused-var warning instead.
+  // timeline.ts (onEnter / onLeaveBack), not here.
   void room
-  void hologram
-  void end
 }

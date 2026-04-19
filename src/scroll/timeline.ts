@@ -309,7 +309,8 @@ export function createTimeline(): MasterTimeline {
 
     const setHeroState = (): void => {
       heroExitDone = false // re-enable the exit tick for next scroll
-      hologram.setReveal(0) // hide platform + grid
+      // hologram.setReveal driven by scrubbed master timeline — do NOT
+      // set it discretely here or it fights the tween every frame.
       fadeToWarm()
       lights.setAboutLightLevel?.(0)
       lights.setMailroomLightLevel?.(0)
@@ -364,13 +365,15 @@ export function createTimeline(): MasterTimeline {
       avatar.setShowContact?.(false)
       avatar.setHeroThinking?.(false)
       hologram.root.position.y = 0
-      hologram.setReveal(1) // show platform + grid
+      // hologram.setReveal driven by scrubbed master timeline — do NOT
+      // set it discretely here or it fights the tween every frame.
       // hologram.root.visible owned by wide-range about trigger.
       mailroom.visible = false
     }
 
     const setProjectsState = (): void => {
-      hologram.setReveal(0) // hide platform + grid
+      // hologram.setReveal driven by scrubbed master timeline — do NOT
+      // set it discretely here or it fights the tween every frame.
       fadeToWarm()
       lights.setAboutLightLevel?.(0)
       lights.setMailroomLightLevel?.(0)

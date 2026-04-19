@@ -103,10 +103,20 @@ onMounted(async () => {
   // Hologram FX layer — platform + grid only, no avatar inside. Material
   // swap on the avatar happens in-place via the setReveal API.
   const holo = createHologram(loadedAvatar)
-  holo.setReveal(0)
-  holo.root.visible = false
   holo.root.position.set(0, 0, 8) // parked behind the back wall
   scene.scene.add(holo.root)
+
+  // Pre-warm hologram shaders: render one frame with reveal=1 so the GPU
+  // compiles the grid, platform, and laser ring shaders *before* the user
+  // scrolls to #about. Without this the first visible frame stalls for
+  // 50-200ms while the GPU compiles 3+ custom ShaderMaterials, causing
+  // the infamous "snap" on the first scroll after reload.
+  holo.setReveal(1)
+  holo.root.visible = true
+  scene.renderer.render(scene.scene, scene.camera)
+  // Now hide and reset — shaders are compiled, next reveal is instant.
+  holo.setReveal(0)
+  holo.root.visible = false
   hologram.value = holo
 
 
