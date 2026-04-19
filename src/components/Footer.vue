@@ -19,9 +19,9 @@ const year = new Date().getFullYear()
       <div
         class="flex items-center gap-6 font-mono text-[10px] uppercase tracking-[0.24em] text-ash"
       >
-        <a href="#" class="hover:text-bone">Privacy</a>
+        <router-link to="/privacy" class="hover:text-bone">Privacy</router-link>
         <span class="opacity-30">·</span>
-        <a href="#" class="hover:text-bone">Legal</a>
+        <router-link to="/legal" class="hover:text-bone">Legal</router-link>
         <span class="opacity-30">·</span>
         <span>Built between innings</span>
       </div>
