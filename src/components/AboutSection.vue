@@ -166,7 +166,7 @@ onBeforeUnmount(() => {
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(6), current: currentLine === 6 }]">
         <span class="text-cyan/50">ALIAS:</span>
-        <span class="ml-6 text-bone/80">omen</span>
+        <span class="ml-6 text-bone/80">haciensus</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(7), current: currentLine === 7 }]">
         <span class="text-cyan/50">LOCATION:</span>

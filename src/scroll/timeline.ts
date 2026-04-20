@@ -496,6 +496,7 @@ export function createTimeline(): MasterTimeline {
         },
         onLeave: () => {
           hologram.root.visible = false
+          fadeToWarm()
         },
         onLeaveBack: () => {
           hologram.root.visible = false

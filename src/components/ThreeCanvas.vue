@@ -72,13 +72,19 @@ onMounted(async () => {
   let highWater = 0
   const onFileProgress = (e: ProgressEvent) => {
     const url = (e.target as XMLHttpRequest | undefined)?.responseURL ?? ''
-    fileProgress.set(url, { loaded: e.loaded, total: e.total || e.loaded })
+    if (e.lengthComputable && e.total > 0) {
+      fileProgress.set(url, { loaded: e.loaded, total: e.total })
+    } else {
+      // Server didn't send Content-Length — keep the bar moving but never "complete"
+      fileProgress.set(url, { loaded: e.loaded, total: e.loaded + 1 })
+    }
     let loaded = 0, total = 0
     for (const v of fileProgress.values()) {
       loaded += v.loaded
       total += v.total
     }
-    const p = total > 0 ? Math.min(loaded / total, 1) : 0
+    // Cap file-based progress at 95% — reserve the last 5% for post-load setup
+    const p = total > 0 ? Math.min(loaded / total, 0.95) : 0
     // Never go backwards — new files joining the pool can temporarily drop the ratio
     if (p > highWater) highWater = p
     emit('progress', highWater)
