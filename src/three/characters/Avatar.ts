@@ -38,6 +38,7 @@ import {
   Object3D,
   AnimationMixer,
   AnimationClip,
+  LoopPingPong,
   Vector3,
   Euler,
   MathUtils,
@@ -447,16 +448,24 @@ export async function loadAvatar(
   let activeClip: AnimationClip | null = null
   if (thinkingGltf.animations.length > 0) {
     activeClip = thinkingGltf.animations[0]
-    thinkingMixer.clipAction(activeClip).play()
+    const a = thinkingMixer.clipAction(activeClip)
+    a.setLoop(LoopPingPong, Infinity)
+    a.play()
   }
   if (jerseyAboutGltf.animations.length > 0) {
-    jerseyAboutMixer.clipAction(jerseyAboutGltf.animations[0]).play()
+    const a = jerseyAboutMixer.clipAction(jerseyAboutGltf.animations[0])
+    a.setLoop(LoopPingPong, Infinity)
+    a.play()
   }
   if (shirtGltf.animations.length > 0) {
-    shirtMixer.clipAction(shirtGltf.animations[0]).play()
+    const a = shirtMixer.clipAction(shirtGltf.animations[0])
+    a.setLoop(LoopPingPong, Infinity)
+    a.play()
   }
   if (contactGltf.animations.length > 0) {
-    contactMixer.clipAction(contactGltf.animations[0]).play()
+    const a = contactMixer.clipAction(contactGltf.animations[0])
+    a.setLoop(LoopPingPong, Infinity)
+    a.play()
   }
 
   // ── Find the head bone (use the thinking mesh; bones are equivalent
