@@ -13,19 +13,31 @@ import { getTimeSlot, fetchRegion } from '../utils/timeSlot'
 
 const { label: timeLabel, sky } = getTimeSlot()
 const region = ref('')
-const progress = ref(0)
+const assetProgress = ref(0)
+const displayedProgress = ref(0)
 const loaded = ref(false)
 const started = ref(false)
+const sceneReady = ref(false)
+const regionReady = ref(false)
+const regionPromise = fetchRegion()
+  .then((detected) => detected ?? 'India')
+  .catch(() => 'India')
+
+const EXPECTED_LOAD_DURATION_MS = 60000
+const LONG_LOAD_TRICKLE_MS = 10000
+const NORMAL_PROGRESS_EASE = 0.04
+const READY_PROGRESS_EASE = 0.22
+
+let progressRaf = 0
+let loaderStartedAt = 0
 
 const onProgress = (v: number) => {
-  progress.value = v
+  assetProgress.value = Math.max(assetProgress.value, Math.min(v, 1))
 }
 
-const onReady = async () => {
-  // Fetch region at 100% — fast API call, models already loaded
-  const detected = await fetchRegion()
-  region.value = detected ?? 'India'
-  loaded.value = true
+const onReady = () => {
+  assetProgress.value = 1
+  sceneReady.value = true
 }
 
 const start = () => {
@@ -45,11 +57,46 @@ const unlockScroll = () => {
   document.body.style.overflow = ''
 }
 
+const projectedProgress = (timestamp: number) => {
+  const elapsed = Math.max(0, timestamp - loaderStartedAt)
+
+  if (elapsed <= EXPECTED_LOAD_DURATION_MS) {
+    return 0.95 * (elapsed / EXPECTED_LOAD_DURATION_MS)
+  }
+
+  const overtime = elapsed - EXPECTED_LOAD_DURATION_MS
+  return 0.95 + 0.04 * (1 - Math.exp(-overtime / LONG_LOAD_TRICKLE_MS))
+}
+
+const animateProgress = (timestamp: number) => {
+  const target = sceneReady.value ? 1 : projectedProgress(timestamp)
+  const ease = sceneReady.value ? READY_PROGRESS_EASE : NORMAL_PROGRESS_EASE
+
+  const delta = target - displayedProgress.value
+  displayedProgress.value += delta * ease
+  if (Math.abs(delta) < 0.001) displayedProgress.value = target
+
+  if (sceneReady.value && regionReady.value && displayedProgress.value >= 0.995) {
+    displayedProgress.value = 1
+    loaded.value = true
+    return
+  }
+
+  progressRaf = requestAnimationFrame(animateProgress)
+}
+
 onMounted(() => {
   lockScroll()
+  loaderStartedAt = performance.now()
+  regionPromise.then((detected) => {
+    region.value ||= detected
+    regionReady.value = true
+  })
+  progressRaf = requestAnimationFrame(animateProgress)
 })
 
 onBeforeUnmount(() => {
+  cancelAnimationFrame(progressRaf)
   unlockScroll()
   disposeAudio()
   stopTabAnimation()
@@ -70,9 +117,9 @@ onBeforeUnmount(() => {
       <div class="loading-content">
         <div v-if="!loaded" class="progress-section">
           <div class="progress-track">
-            <div class="progress-fill" :style="{ width: progress * 100 + '%' }" />
+            <div class="progress-fill" :style="{ width: displayedProgress * 100 + '%' }" />
           </div>
-          <p class="progress-text">{{ Math.round(progress * 100) }}%</p>
+          <p class="progress-text">{{ Math.round(displayedProgress * 100) }}%</p>
         </div>
         <Transition name="fade-in">
           <div v-if="loaded" class="ready-section">
