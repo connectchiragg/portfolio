@@ -29,5 +29,29 @@ const year = new Date().getFullYear()
         © {{ year }} {{ profile.name }}
       </p>
     </div>
+    <p
+      class="mx-auto mt-6 max-w-6xl px-6 text-center font-mono text-[9px] uppercase tracking-[0.18em] text-ash/60"
+    >
+      Music:
+      <a
+        href="https://pixabay.com/music/traditional-jazz-dancing-saxophone-dark-jazz-388468/"
+        target="_blank"
+        rel="noreferrer"
+        class="transition hover:text-bone"
+      >
+        Dancing Saxophone (dark jazz)
+      </a>
+      by Surprising_Media
+      <span class="opacity-40">·</span>
+      <a
+        href="https://pixabay.com/music/beats-futuristic-sci-fi-268233/"
+        target="_blank"
+        rel="noreferrer"
+        class="transition hover:text-bone"
+      >
+        Futuristic Sci Fi
+      </a>
+      by Rockot from Pixabay
+    </p>
   </footer>
 </template>

@@ -548,6 +548,8 @@ export function buildMailroom(): Group {
   }
 
   const rainEuler = new Euler(0, 0, 0, 'XYZ')
+  const rainVector = new Vector3()
+  const rainScale = new Vector3(1, 1, 1)
   let rainElapsed = 0
   const rainTick = (dt: number): void => {
     rainElapsed += dt
@@ -575,9 +577,9 @@ export function buildMailroom(): Group {
       rainEuler.set(rainEulerX[i], rainEulerY[i], rainEulerZ[i])
       tmpQuat.setFromEuler(rainEuler)
       tmpMat.compose(
-        new Vector3(rainPos[i * 3], rainPos[i * 3 + 1], rainPos[i * 3 + 2]),
+        rainVector.set(rainPos[i * 3], rainPos[i * 3 + 1], rainPos[i * 3 + 2]),
         tmpQuat,
-        new Vector3(1, 1, 1),
+        rainScale,
       )
       rainEnvelopes.setMatrixAt(i, tmpMat)
     }

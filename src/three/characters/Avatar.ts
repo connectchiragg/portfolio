@@ -615,6 +615,9 @@ export async function loadAvatar(
   thinkingModel.visible = true
   setScanReveal(0)
 
+  const handBallWorld = new Vector3()
+  const palmWorld = new Vector3()
+
   // ── Tick: advance all four mixers + the time uniform ─────────────────
   const tick = (dt: number, elapsed: number): void => {
     if (thinkingModel.visible) thinkingMixer.update(dt)
@@ -626,20 +629,19 @@ export async function loadAvatar(
     // Position the football at the average of the finger knuckle world positions
     if (handBall && contactModel.visible && palmBones.length > 0) {
       handBall.visible = true
-      const avg = new Vector3()
+      handBallWorld.set(0, 0, 0)
       for (const bone of palmBones) {
-        const wp = new Vector3()
-        bone.getWorldPosition(wp)
-        avg.add(wp)
+        bone.getWorldPosition(palmWorld)
+        handBallWorld.add(palmWorld)
       }
-      avg.divideScalar(palmBones.length)
+      handBallWorld.divideScalar(palmBones.length)
       // Shift down so the ball sits under the forearm/wrist
-      avg.y -= 0.12
-      avg.x -= 0.03  // slightly left
-      avg.z -= 0.035  // slightly behind fingers
+      handBallWorld.y -= 0.12
+      handBallWorld.x -= 0.03  // slightly left
+      handBallWorld.z -= 0.035  // slightly behind fingers
       // Convert world position to the ball's parent (root) local space
-      root.worldToLocal(avg)
-      handBall.position.copy(avg)
+      root.worldToLocal(handBallWorld)
+      handBall.position.copy(handBallWorld)
     } else if (handBall) {
       handBall.visible = false
     }

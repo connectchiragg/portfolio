@@ -53,6 +53,11 @@ const cursor = shallowRef<{ dispose: () => void } | null>(null)
 const easterEggs = shallowRef<{ dispose: () => void } | null>(null)
 const parallax = shallowRef<{ tick: (dt: number) => void; dispose: () => void } | null>(null)
 
+const waitForFrame = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve())
+  })
+
 onMounted(async () => {
   if (!canvasRef.value) return
 
@@ -134,23 +139,9 @@ onMounted(async () => {
   const holo = createHologram(loadedAvatar)
   holo.root.position.set(0, 0, 8) // parked behind the back wall
   scene.scene.add(holo.root)
-
-  // Pre-warm hologram shaders: render one frame with reveal=1 so the GPU
-  // compiles the grid, platform, and laser ring shaders *before* the user
-  // scrolls to #about. Without this the first visible frame stalls for
-  // 50-200ms while the GPU compiles 3+ custom ShaderMaterials, causing
-  // the infamous "snap" on the first scroll after reload.
-  holo.setReveal(1)
-  holo.root.visible = true
-  scene.renderer.render(scene.scene, scene.camera)
-  // Now hide and reset — shaders are compiled, next reveal is instant.
   holo.setReveal(0)
   holo.root.visible = false
   hologram.value = holo
-
-
-
-
 
   // Mailroom — starts below camera, lifts into view with scroll (elevator).
   // Avatar is parented inside the mailroom group so everything moves as one.
@@ -184,10 +175,12 @@ onMounted(async () => {
   const enablePostFx = gpuInfo.tier >= 2 && !gpuInfo.isMobile && !reducedMotion
 
   // Postprocessing composer — replaces the default render call
+  let activeComposer: Composer | null = null
   if (enablePostFx) {
     const cmp = createComposer(scene)
     scene.setRenderer((dt) => cmp.render(dt))
     composer.value = cmp
+    activeComposer = cmp
     // Resize composer alongside the canvas
     const ro = new ResizeObserver(() => {
       const w = canvasRef.value?.clientWidth ?? window.innerWidth
@@ -196,6 +189,87 @@ onMounted(async () => {
     })
     if (canvasRef.value) ro.observe(canvasRef.value)
   }
+
+  // Compile and upload the expensive one-shot paths while the canvas is
+  // still hidden behind the loading screen. The stutter this guards against
+  // appears only once after reload, which points to first-use GPU work:
+  // shader compilation, texture upload, postprocessing passes, and shadow
+  // map allocation for previously hidden section objects.
+  const renderWarmupFrame = async () => {
+    scene.renderer.compile(scene.scene, scene.camera)
+    if (activeComposer) activeComposer.render(1 / 60)
+    else scene.renderer.render(scene.scene, scene.camera)
+    await waitForFrame()
+  }
+
+  const warmupFirstUsePaths = async () => {
+    const cameraPosition = scene.camera.position.clone()
+    const cameraQuaternion = scene.camera.quaternion.clone()
+
+    scene.scene.add(loadedAvatar.root)
+    loadedAvatar.root.visible = true
+    loadedAvatar.setHeroThinking?.(false)
+    loadedAvatar.setShowContact?.(false)
+
+    // About / laser room: compile the scan duo, platform, grid, laser ring,
+    // and the composer effects that render them.
+    loadedRoom.root.visible = false
+    holo.root.visible = true
+    holo.root.position.set(0, 0, 8)
+    loadedAvatar.root.position.set(0, 0.15, 8)
+    loadedAvatar.root.rotation.set(0, Math.PI, 0)
+    scene.camera.position.set(0, 2.0, 4.0)
+    scene.camera.lookAt(0, 1.2, 8)
+    for (const reveal of [0, 0.5, 1]) {
+      holo.setReveal(reveal)
+      holo.setLaserProgress?.(reveal)
+      loadedAvatar.tick?.(0, reveal)
+      await renderWarmupFrame()
+    }
+
+    // Contact / mailroom: compile contact avatar materials, ball, mailroom
+    // materials, instancing buffers, postprocessing, and shadow maps from
+    // the mailroom key before the user scrolls into the section.
+    holo.root.visible = false
+    holo.setReveal(0)
+    loadedAvatar.setHeroThinking?.(false)
+    loadedAvatar.setShowContact?.(true)
+    mr.add(loadedAvatar.root)
+    loadedAvatar.root.visible = true
+    loadedAvatar.root.position.set(0.55, 0, 0)
+    loadedAvatar.root.rotation.set(0, -0.42, 0)
+    loadedAvatar.tick?.(0, 0)
+    mr.visible = true
+    mr.position.set(0, 0, 0)
+    roomLights.setTimeOfDay(0.85)
+    roomLights.setMailroomLightLevel?.(1)
+    scene.camera.position.set(0, 1.6, 3.5)
+    scene.camera.lookAt(0, 1.2, 0)
+    await renderWarmupFrame()
+    await renderWarmupFrame()
+
+    // Restore the startup state before ScrollTrigger builds the canonical
+    // hero timeline state and before the canvas fades in.
+    scene.camera.position.copy(cameraPosition)
+    scene.camera.quaternion.copy(cameraQuaternion)
+    scene.scene.add(loadedAvatar.root)
+    loadedAvatar.root.visible = false
+    loadedAvatar.root.position.set(0.55, 0, -1.2)
+    loadedAvatar.root.rotation.set(0, 0, 0)
+    loadedAvatar.setShowContact?.(false)
+    loadedAvatar.setHeroThinking?.(true)
+    holo.setReveal(0)
+    holo.setLaserProgress?.(0)
+    holo.root.visible = false
+    mr.visible = false
+    mr.position.set(0, -6, 0)
+    loadedRoom.root.visible = true
+    loadedRoom.root.position.y = 0
+    roomLights.setMailroomLightLevel?.(0)
+    roomLights.setTimeOfDay(0)
+  }
+
+  await warmupFirstUsePaths()
 
   // Audio is handled by App.vue via src/audio/sounds.ts
 
@@ -218,8 +292,38 @@ onMounted(async () => {
     })
   }
 
+  const debugPerf = new URLSearchParams(window.location.search).has('debugPerf')
+  const debugSectionIds = ['about', 'projects', 'contact']
+  let lastPerfLogAt = 0
+  const getDebugSection = () => {
+    for (const id of debugSectionIds) {
+      const el = document.getElementById(id)
+      if (!el) continue
+      const rect = el.getBoundingClientRect()
+      if (rect.top <= window.innerHeight * 0.55 && rect.bottom >= window.innerHeight * 0.35) {
+        return id
+      }
+    }
+    return 'hero'
+  }
+
   // ─── Tick wiring ────────────────────────────────────────────────────────
   scene.onTick((dt, elapsed) => {
+    if (debugPerf && dt > 0.05 && elapsed - lastPerfLogAt > 0.25) {
+      lastPerfLogAt = elapsed
+      console.warn('[perf] long frame', {
+        ms: Math.round(dt * 1000),
+        elapsed: Number(elapsed.toFixed(2)),
+        section: getDebugSection(),
+        scrollY: Math.round(window.scrollY),
+        hologramVisible: holo.root.visible,
+        mailroomVisible: mr.visible,
+        roomVisible: loadedRoom.root.visible,
+        avatarVisible: loadedAvatar.root.visible,
+        renderer: scene.renderer.info.render,
+        memory: scene.renderer.info.memory,
+      })
+    }
     loadedRoom.tick?.(dt, elapsed)
     loadedAvatar.tick?.(dt, elapsed)
     holo.tick?.(dt, elapsed)
