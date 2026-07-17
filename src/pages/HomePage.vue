@@ -12,20 +12,23 @@ import { startTabAnimation, stopTabAnimation } from '../utils/tabAnimation'
 import { getTimeSlot, fetchRegion } from '../utils/timeSlot'
 
 const { label: timeLabel, sky } = getTimeSlot()
-const region = ref('')
+const region = ref('India')
 const assetProgress = ref(0)
 const displayedProgress = ref(0)
 const loaded = ref(false)
 const started = ref(false)
 const sceneReady = ref(false)
-const regionReady = ref(false)
 const regionPromise = fetchRegion()
   .then((detected) => detected ?? 'India')
   .catch(() => 'India')
 
-const EXPECTED_LOAD_DURATION_MS = 60000
-const LONG_LOAD_TRICKLE_MS = 10000
-const NORMAL_PROGRESS_EASE = 0.04
+const QUICK_START_PROGRESS = 0.1
+const QUICK_START_DURATION_MS = 1200
+const SYNTHETIC_PROGRESS_CEILING = 0.94
+const SYNTHETIC_PROGRESS_TIME_CONSTANT_MS = 12000
+const ASSET_PROGRESS_BASE = 0.08
+const ASSET_PROGRESS_RANGE = 0.88
+const NORMAL_PROGRESS_EASE = 0.075
 const READY_PROGRESS_EASE = 0.22
 
 let progressRaf = 0
@@ -59,13 +62,26 @@ const unlockScroll = () => {
 
 const projectedProgress = (timestamp: number) => {
   const elapsed = Math.max(0, timestamp - loaderStartedAt)
+  const quickStartRatio = Math.min(elapsed / QUICK_START_DURATION_MS, 1)
+  const quickStart = QUICK_START_PROGRESS * quickStartRatio
+  const postStartElapsed = Math.max(0, elapsed - QUICK_START_DURATION_MS)
+  const longLoadProgress =
+    (SYNTHETIC_PROGRESS_CEILING - QUICK_START_PROGRESS)
+    * (1 - Math.exp(-postStartElapsed / SYNTHETIC_PROGRESS_TIME_CONSTANT_MS))
+  const syntheticProgress = Math.min(
+    quickStart + longLoadProgress,
+    SYNTHETIC_PROGRESS_CEILING,
+  )
 
-  if (elapsed <= EXPECTED_LOAD_DURATION_MS) {
-    return 0.95 * (elapsed / EXPECTED_LOAD_DURATION_MS)
-  }
+  // File progress is meaningful on a cold cache, but the final scene setup
+  // also includes decoding, shader compilation, texture upload, and warm-up.
+  // Map downloaded bytes into 8–94% and reserve the remainder for that work.
+  const measuredProgress = Math.min(
+    ASSET_PROGRESS_BASE + assetProgress.value * ASSET_PROGRESS_RANGE,
+    SYNTHETIC_PROGRESS_CEILING,
+  )
 
-  const overtime = elapsed - EXPECTED_LOAD_DURATION_MS
-  return 0.95 + 0.04 * (1 - Math.exp(-overtime / LONG_LOAD_TRICKLE_MS))
+  return Math.max(syntheticProgress, measuredProgress)
 }
 
 const animateProgress = (timestamp: number) => {
@@ -76,7 +92,7 @@ const animateProgress = (timestamp: number) => {
   displayedProgress.value += delta * ease
   if (Math.abs(delta) < 0.001) displayedProgress.value = target
 
-  if (sceneReady.value && regionReady.value && displayedProgress.value >= 0.995) {
+  if (sceneReady.value && displayedProgress.value >= 0.995) {
     displayedProgress.value = 1
     loaded.value = true
     return
@@ -89,8 +105,7 @@ onMounted(() => {
   lockScroll()
   loaderStartedAt = performance.now()
   regionPromise.then((detected) => {
-    region.value ||= detected
-    regionReady.value = true
+    region.value = detected
   })
   progressRaf = requestAnimationFrame(animateProgress)
 })
@@ -192,7 +207,6 @@ onBeforeUnmount(() => {
   height: 100%;
   background: var(--sky-accent, #4ad8ff);
   border-radius: 1px;
-  transition: width 0.3s ease;
 }
 
 .progress-text {

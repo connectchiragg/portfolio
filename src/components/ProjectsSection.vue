@@ -34,17 +34,21 @@ import { projects } from '../data/projects'
       </div>
 
       <div class="relative">
-        <div class="grid gap-x-6 gap-y-16 sm:grid-cols-2 blur-[6px] select-none pointer-events-none">
-          <div
+        <div class="grid gap-x-6 gap-y-16 sm:grid-cols-2">
+          <a
             v-for="p in projects"
             :key="p.title"
-            class="relative block"
+            :href="p.href"
+            target="_blank"
+            rel="noopener noreferrer"
+            :aria-label="`Visit ${p.title}`"
+            class="group relative block outline-none"
           >
-            <div class="relative overflow-hidden border border-bone/10 bg-graphite">
+            <div class="relative overflow-hidden border border-bone/10 bg-graphite transition-colors duration-300 group-hover:border-ember/50 group-focus-visible:border-ember">
               <img
                 :src="p.screenshot"
                 :alt="p.title + ' screenshot'"
-                class="aspect-[8/5] w-full object-cover"
+                class="aspect-[8/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.015]"
                 loading="lazy"
               />
               <div
@@ -76,24 +80,13 @@ import { projects } from '../data/projects'
                 </div>
               </div>
               <span
-                class="mt-2 grid h-9 w-9 flex-none place-items-center rounded-full border border-bone/20 text-bone/60"
+                class="mt-2 grid h-9 w-9 flex-none place-items-center rounded-full border border-bone/20 text-bone/60 transition-colors duration-300 group-hover:border-ember group-hover:text-ember group-focus-visible:border-ember group-focus-visible:text-ember"
+                aria-hidden="true"
               >
                 ↗
               </span>
             </div>
-          </div>
-        </div>
-
-        <!-- Coming Soon overlay -->
-        <div class="absolute inset-0 flex items-center justify-center">
-          <div class="text-center">
-            <p class="font-display text-6xl font-medium tracking-[-0.02em] text-bone sm:text-8xl">
-              Coming Soon<span class="text-ember">.</span>
-            </p>
-            <p class="mt-4 font-mono text-[11px] uppercase tracking-[0.28em] text-ash">
-              Projects are being curated
-            </p>
-          </div>
+          </a>
         </div>
       </div>
 
