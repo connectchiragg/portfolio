@@ -2,7 +2,7 @@
  * Animated browser tab — favicon + title.
  *
  * Combines:
- *  1. Canvas-drawn animated emoji favicon (sway / rotate / bounce)
+ *  1. Canvas-drawn section-reactive emoji favicon
  *  2. Section-reactive emoji & title
  *  3. Typing effect on section change
  *  4. Emoji ticker sliding across the title
@@ -26,9 +26,7 @@ const TITLE_BASE = 'Chirag'
 const TYPING_SPEED = 80           // ms per character
 
 let activeSection = 'hero'
-let animFrame = 0
 let titleInterval: ReturnType<typeof setInterval> | null = null
-let faviconRaf: number | null = null
 let typingTimeout: ReturnType<typeof setTimeout> | null = null
 
 // ── Favicon canvas ────────────────────────────────────────────────
@@ -50,28 +48,19 @@ function getFaviconLink(): HTMLLinkElement {
   return linkEl
 }
 
-function drawFavicon(emoji: string, frame: number) {
+function drawFavicon(emoji: string) {
   ctx.clearRect(0, 0, 64, 64)
 
-  // Spin in place like a clock hand
-  const angle = frame * 0.04
-
-  ctx.save()
-  ctx.translate(32, 32)
-  ctx.rotate(angle)
   ctx.font = '46px serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(emoji, 0, 0)
-  ctx.restore()
+  ctx.fillText(emoji, 32, 32)
 
   getFaviconLink().href = canvas.toDataURL('image/png')
 }
 
 // ── Title animation ───────────────────────────────────────────────
 let typingIndex = 0
-let cursorVisible = true
-let cursorInterval: ReturnType<typeof setInterval> | null = null
 
 function buildTargetTitle(section: SectionMeta): string {
   return `${TITLE_BASE} · ${section.label}`
@@ -80,27 +69,15 @@ function buildTargetTitle(section: SectionMeta): string {
 function typeTitle(target: string) {
   typingIndex = 0
   if (typingTimeout) clearTimeout(typingTimeout)
-  if (cursorInterval) clearInterval(cursorInterval)
 
   function typeNext() {
     if (typingIndex <= target.length) {
-      document.title = target.slice(0, typingIndex) + '▌'
+      document.title = target.slice(0, typingIndex)
       typingIndex++
       typingTimeout = setTimeout(typeNext, TYPING_SPEED)
-    } else {
-      // Typing done — start blinking cursor
-      startCursorBlink(target)
     }
   }
   typeNext()
-}
-
-function startCursorBlink(title: string) {
-  cursorVisible = true
-  cursorInterval = setInterval(() => {
-    cursorVisible = !cursorVisible
-    document.title = title + (cursorVisible ? '▌' : '')
-  }, 500)
 }
 
 // ── Section detection via IntersectionObserver ────────────────────
@@ -111,6 +88,7 @@ function onSectionChange(id: string) {
   activeSection = id
   const meta = sections[id] || sections.hero
 
+  drawFavicon(meta.emoji)
   typeTitle(buildTargetTitle(meta))
 }
 
@@ -149,17 +127,9 @@ function setupObserver() {
 // ── Lifecycle ─────────────────────────────────────────────────────
 
 export function startTabAnimation() {
-  // Favicon loop — requestAnimationFrame for max smoothness
-  function faviconLoop() {
-    animFrame++
-    const meta = sections[activeSection] || sections.hero
-    drawFavicon(meta.emoji, animFrame)
-    faviconRaf = requestAnimationFrame(faviconLoop)
-  }
-  faviconRaf = requestAnimationFrame(faviconLoop)
-
   // Initial title
   const meta = sections.hero
+  drawFavicon(meta.emoji)
   typeTitle(buildTargetTitle(meta))
 
   // Observe sections after a tick (DOM needs to be rendered)
@@ -169,10 +139,8 @@ export function startTabAnimation() {
 }
 
 export function stopTabAnimation() {
-  if (faviconRaf) cancelAnimationFrame(faviconRaf)
   if (titleInterval) clearInterval(titleInterval)
   if (typingTimeout) clearTimeout(typingTimeout)
-  if (cursorInterval) clearInterval(cursorInterval)
   if (observer) observer.disconnect()
 
   // Restore static title
