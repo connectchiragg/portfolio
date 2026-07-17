@@ -13,7 +13,6 @@ import { getTimeSlot, fetchRegion } from '../utils/timeSlot'
 
 const { label: timeLabel, sky } = getTimeSlot()
 const region = ref('India')
-const assetProgress = ref(0)
 const displayedProgress = ref(0)
 const loaded = ref(false)
 const started = ref(false)
@@ -22,24 +21,15 @@ const regionPromise = fetchRegion()
   .then((detected) => detected ?? 'India')
   .catch(() => 'India')
 
-const QUICK_START_PROGRESS = 0.1
-const QUICK_START_DURATION_MS = 1200
+const EXPECTED_LOAD_DURATION_MS = 45000
 const SYNTHETIC_PROGRESS_CEILING = 0.94
-const SYNTHETIC_PROGRESS_TIME_CONSTANT_MS = 12000
-const ASSET_PROGRESS_BASE = 0.08
-const ASSET_PROGRESS_RANGE = 0.88
 const NORMAL_PROGRESS_EASE = 0.075
 const READY_PROGRESS_EASE = 0.22
 
 let progressRaf = 0
 let loaderStartedAt = 0
 
-const onProgress = (v: number) => {
-  assetProgress.value = Math.max(assetProgress.value, Math.min(v, 1))
-}
-
 const onReady = () => {
-  assetProgress.value = 1
   sceneReady.value = true
 }
 
@@ -62,26 +52,10 @@ const unlockScroll = () => {
 
 const projectedProgress = (timestamp: number) => {
   const elapsed = Math.max(0, timestamp - loaderStartedAt)
-  const quickStartRatio = Math.min(elapsed / QUICK_START_DURATION_MS, 1)
-  const quickStart = QUICK_START_PROGRESS * quickStartRatio
-  const postStartElapsed = Math.max(0, elapsed - QUICK_START_DURATION_MS)
-  const longLoadProgress =
-    (SYNTHETIC_PROGRESS_CEILING - QUICK_START_PROGRESS)
-    * (1 - Math.exp(-postStartElapsed / SYNTHETIC_PROGRESS_TIME_CONSTANT_MS))
-  const syntheticProgress = Math.min(
-    quickStart + longLoadProgress,
+  return Math.min(
+    SYNTHETIC_PROGRESS_CEILING * (elapsed / EXPECTED_LOAD_DURATION_MS),
     SYNTHETIC_PROGRESS_CEILING,
   )
-
-  // File progress is meaningful on a cold cache, but the final scene setup
-  // also includes decoding, shader compilation, texture upload, and warm-up.
-  // Map downloaded bytes into 8–94% and reserve the remainder for that work.
-  const measuredProgress = Math.min(
-    ASSET_PROGRESS_BASE + assetProgress.value * ASSET_PROGRESS_RANGE,
-    SYNTHETIC_PROGRESS_CEILING,
-  )
-
-  return Math.max(syntheticProgress, measuredProgress)
 }
 
 const animateProgress = (timestamp: number) => {
@@ -149,7 +123,7 @@ onBeforeUnmount(() => {
     </div>
   </Transition>
 
-  <ThreeCanvas @progress="onProgress" @ready="onReady" />
+  <ThreeCanvas @ready="onReady" />
   <Nav :visible="started" />
   <main>
     <HeroSection />
