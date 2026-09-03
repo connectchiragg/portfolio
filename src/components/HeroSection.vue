@@ -54,11 +54,11 @@ const nameParts = computed(() => {
           {{ nameParts.first }}<br v-if="nameParts.rest" />{{ nameParts.rest }}
         </h1>
 
-        <div class="mt-8 flex items-center gap-4 font-mono text-xs uppercase tracking-[0.22em] text-ash">
+        <div class="mt-8 flex flex-wrap items-center gap-4 font-mono text-xs uppercase tracking-[0.22em] text-ash">
           <span class="hair" />
-          <span>{{ profile.role }}</span>
+          <span class="whitespace-nowrap">{{ profile.role }}</span>
           <span class="opacity-40">/</span>
-          <span>{{ profile.location }}</span>
+          <span class="whitespace-nowrap">{{ profile.location }}</span>
         </div>
 
         <p class="mt-8 max-w-md font-display text-base leading-relaxed text-bone/75">
@@ -67,25 +67,25 @@ const nameParts = computed(() => {
 
         <div class="mt-12 flex flex-wrap items-center gap-4">
           <a
-            href="#"
+            href="#about"
             class="group inline-flex items-center gap-3 rounded-none border border-bone/80 bg-transparent px-7 py-4 font-mono text-[11px] font-medium uppercase tracking-[0.24em] text-bone transition hover:border-ember hover:text-ember"
           >
-            Selected Home
+            Explore profile
             <span class="transition-transform group-hover:translate-x-1">→</span>
-          </a>
-          <a
-            href="#about"
-            class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.24em] text-ash transition hover:text-bone"
-          >
-            <span class="hair" />
-            About
           </a>
           <a
             href="#projects"
             class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.24em] text-ash transition hover:text-bone"
           >
             <span class="hair" />
-            Work
+            Selected work
+          </a>
+          <a
+            href="#contact"
+            class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.24em] text-ash transition hover:text-bone"
+          >
+            <span class="hair" />
+            Let's talk
           </a>
         </div>
 
@@ -97,7 +97,7 @@ const nameParts = computed(() => {
             <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-ember opacity-60" />
             <span class="relative inline-flex h-2 w-2 rounded-full bg-ember" />
           </span>
-          Open for collaboration — {{ quarter }}
+          Open to Lead & Forward-Deployed AI roles — {{ quarter }}
         </p>
       </div>
 

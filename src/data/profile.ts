@@ -20,18 +20,18 @@ export interface Profile {
 
 export const profile: Profile = {
   name: 'Chirag Goel',
-  role: 'Fullstack Developer',
-  location: 'Bangalore, India',
+  role: 'Founding Engineer · Applied AI',
+  location: 'Bengaluru, India',
   available: true,
-  bio: 'Builds scalable backend systems, data pipelines, and cloud infrastructure. IIT BHU grad. Comfortable in databases, on the terminal, and at 2am with a half‑empty mug.',
+  bio: 'Leads an enterprise-grade Voice AI platform generating multi-million-dollar ARR and handling thousands of calls per minute.',
   skills: [
-    'Java & Spring Boot',
-    'Python & Flask',
-    'PostgreSQL & Redis',
-    'Kafka & Airflow',
-    'Docker & Terraform',
-    'AWS (S3, SQS, Lambda, ECS)',
-    'System Design',
+    'Voice AI & Conversational AI',
+    'Agentic Systems, RAG & Evals',
+    'Python, Java, SQL, C++ & Bash',
+    'LangGraph, Spring Boot & Flask',
+    'Kafka, Airflow, Redshift & Snowflake',
+    'Postgres, Redis & Elasticsearch',
+    'AWS, Docker, CI/CD & Observability',
   ],
   socials: {
     email: 'mailto:connect.chirag.g@gmail.com',

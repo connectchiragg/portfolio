@@ -102,7 +102,7 @@ onBeforeUnmount(() => {
               </li>
               <li class="flex justify-between gap-4">
                 <span>StepChange</span>
-                <span class="text-[11px] text-bone/50">Dec 2022 – Sep 2024</span>
+                <span class="text-[11px] text-bone/50">Dec 2022 – Oct 2024</span>
               </li>
               <li class="flex justify-between gap-4">
                 <span>Freelance</span>
@@ -171,7 +171,7 @@ onBeforeUnmount(() => {
       <div :class="['dossier-line', { visible: visibleLines.has(7), current: currentLine === 7 }]">
         <span class="text-cyan/50">LOCATION:</span>
         <span class="ml-3 text-bone/80">12.9716° N, 77.5946° E</span>
-        <span class="ml-2 text-ash/35">// BANGALORE, INDIA</span>
+        <span class="ml-2 text-ash/35">// BENGALURU, INDIA</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(8), current: currentLine === 8 }]">
         <span class="text-cyan/50">STATUS:</span>
@@ -187,62 +187,54 @@ onBeforeUnmount(() => {
         <span class="text-cyan/50">FIELD REPORT:</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(11), current: currentLine === 11 }]">
-        <span class="text-bone/60">Subject demonstrates abnormal proficiency in</span>
+        <span class="text-bone/60">Owns architecture, delivery, reliability, and adoption.</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(12), current: currentLine === 12 }]">
-        <span class="text-bone/60">backend systems, data pipelines, and cloud infra.</span>
+        <span class="text-bone/60">Scaled from POC to 100+ live clients and 1M+ calls/month.</span>
         <span class="ml-1 text-ash/15">████████</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(13), current: currentLine === 13 }]">
         <span class="text-ash/15">████████</span>
-        <span class="ml-1 text-bone/60">Known to operate between 2300h and 0400h.</span>
+        <span class="ml-1 text-bone/60">Systems now support multi-million-dollar ARR.</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(14), current: currentLine === 14 }]">
-        <span class="text-bone/60">Built climate risk models for</span>
-        <span class="ml-1 text-ash/15">██████████████</span>
-        <span class="ml-1 text-bone/60">major banks.</span>
+        <span class="text-bone/60">Built Agent Builder, turning standalone deployments</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(15), current: currentLine === 15 }]">
-        <span class="text-bone/60">Architected multi-tenant data warehouse processing</span>
+        <span class="text-bone/60">into signed six-figure bundled deals.</span>
+        <span class="ml-1 text-ash/15">████████</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(16), current: currentLine === 16 }]">
-        <span class="text-bone/60">100GB+ datasets. Latency under one minute.</span>
-        <span class="ml-1 text-ash/15">████</span>
+        <span class="text-bone/60">Shipped AI Receptionist from scratch in 14 days;</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(17), current: currentLine === 17 }]">
-        <span class="text-bone/60">Reduced deployment times by</span>
-        <span class="ml-1 text-ember">75%</span>
-        <span class="ml-1 text-bone/60">via CI/CD overhaul.</span>
+        <span class="text-bone/60">secured contracts before full productization.</span>
+        <span class="ml-1 text-ash/15">████</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(18), current: currentLine === 18 }]">
-        <span class="text-bone/60">Designed custom RBAC for</span>
-        <span class="ml-1 text-ash/15">████████████</span>
-        <span class="ml-1 text-bone/60">enterprise auth.</span>
+        <span class="text-bone/60">Cut daily on-call alerts from 400+ to 2–3:</span>
+        <span class="ml-1 text-ember">99%+</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(19), current: currentLine === 19 }]">
         <span class="text-ash/15">██████</span>
-        <span class="ml-1 text-bone/60">Built AI assistant with vector embeddings on</span>
+        <span class="ml-1 text-bone/60">Translated research into climate-risk systems</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(20), current: currentLine === 20 }]">
-        <span class="text-bone/60">multi-tenant data. Anomaly detection via</span>
-        <span class="ml-1 text-ash/15">████████</span>
+        <span class="text-bone/60">for major banks; built analytics for 100GB+ datasets.</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(21), current: currentLine === 21 }]">
-        <span class="text-bone/60">statistical scoring. Threat level:</span>
-        <span class="ml-1 text-ember">ZERO</span>
-        <span class="ml-3 text-ash/30">// unless provoked with bad code</span>
+        <span class="text-bone/60">Open-sourced Aether for local agent observability.</span>
+        <span class="ml-2 text-ash/30">// Rust</span>
       </div>
 
       <div :class="['dossier-line mt-8', { visible: visibleLines.has(22), current: currentLine === 22 }]">
         <span class="text-cyan/50">RECOMMENDATION:</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(23), current: currentLine === 23 }]">
-        <span class="text-bone/60">Recruit immediately. Do not let</span>
-        <span class="ml-1 text-ash/15">████████</span>
+        <span class="text-bone/60">Deploy as Lead AI or Forward-Deployed AI Engineer.</span>
       </div>
       <div :class="['dossier-line', { visible: visibleLines.has(24), current: currentLine === 24 }]">
-        <span class="text-ash/15">████████████</span>
-        <span class="ml-1 text-bone/60">acquire subject first.</span>
+        <span class="text-bone/60">Mandate: turn ambiguous problems into production systems.</span>
       </div>
 
       <div :class="['dossier-line mt-10', { visible: visibleLines.has(25), current: currentLine === 25 }]">

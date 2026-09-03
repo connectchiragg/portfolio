@@ -17,17 +17,18 @@ const displayedProgress = ref(0)
 const loaded = ref(false)
 const started = ref(false)
 const sceneReady = ref(false)
+const finishing = ref(false)
 const regionPromise = fetchRegion()
   .then((detected) => detected ?? 'India')
   .catch(() => 'India')
 
 const EXPECTED_LOAD_DURATION_MS = 45000
 const SYNTHETIC_PROGRESS_CEILING = 0.94
-const NORMAL_PROGRESS_EASE = 0.075
-const READY_PROGRESS_EASE = 0.22
+const COMPLETION_DURATION_MS = 700
 
 let progressRaf = 0
 let loaderStartedAt = 0
+let completionStartedAt = 0
 
 const onReady = () => {
   sceneReady.value = true
@@ -59,17 +60,30 @@ const projectedProgress = (timestamp: number) => {
 }
 
 const animateProgress = (timestamp: number) => {
-  const target = sceneReady.value ? 1 : projectedProgress(timestamp)
-  const ease = sceneReady.value ? READY_PROGRESS_EASE : NORMAL_PROGRESS_EASE
+  const elapsed = Math.max(0, timestamp - loaderStartedAt)
+  const canComplete = sceneReady.value && elapsed >= EXPECTED_LOAD_DURATION_MS
 
-  const delta = target - displayedProgress.value
-  displayedProgress.value += delta * ease
-  if (Math.abs(delta) < 0.001) displayedProgress.value = target
+  if (!canComplete) {
+    displayedProgress.value = projectedProgress(timestamp)
+  } else {
+    if (completionStartedAt === 0) {
+      completionStartedAt = timestamp
+      finishing.value = true
+    }
 
-  if (sceneReady.value && displayedProgress.value >= 0.995) {
-    displayedProgress.value = 1
-    loaded.value = true
-    return
+    const completion = Math.min(
+      (timestamp - completionStartedAt) / COMPLETION_DURATION_MS,
+      1,
+    )
+    const easedCompletion = 1 - Math.pow(1 - completion, 3)
+    displayedProgress.value = SYNTHETIC_PROGRESS_CEILING
+      + (1 - SYNTHETIC_PROGRESS_CEILING) * easedCompletion
+
+    if (completion >= 1) {
+      displayedProgress.value = 1
+      loaded.value = true
+      return
+    }
   }
 
   progressRaf = requestAnimationFrame(animateProgress)
@@ -106,7 +120,7 @@ onBeforeUnmount(() => {
       <div class="loading-content">
         <div v-if="!loaded" class="progress-section">
           <div class="progress-track">
-            <div class="progress-fill" :style="{ width: displayedProgress * 100 + '%' }" />
+            <div :class="['progress-fill', { 'is-finishing': finishing }]" />
           </div>
           <p class="progress-text">{{ Math.round(displayedProgress * 100) }}%</p>
         </div>
@@ -178,9 +192,49 @@ onBeforeUnmount(() => {
 }
 
 .progress-fill {
+  position: relative;
+  width: 100%;
   height: 100%;
   background: var(--sky-accent, #4ad8ff);
   border-radius: 1px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+  animation: loader-progress 45s linear forwards;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: loader-shimmer 1.4s ease-in-out infinite;
+}
+
+.progress-fill.is-finishing {
+  animation: loader-finish 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes loader-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(0.94); }
+}
+
+@keyframes loader-finish {
+  from { transform: scaleX(0.94); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes loader-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
 }
 
 .progress-text {

@@ -60,8 +60,9 @@ const emailDisplay = emailHref.replace(/^mailto:/, '')
             <span class="text-ember">Let's talk.</span>
           </h2>
           <p class="mt-8 max-w-md font-display text-base leading-relaxed text-bone/70">
-            Building a product, validating an idea, or just want to compare notes
-            on noir lighting? My inbox is open.
+            Hiring a Lead AI or Forward-Deployed AI Engineer who can own the path
+            from customer problem to production system? Bring me the hard,
+            high-stakes brief.
           </p>
 
           <a
