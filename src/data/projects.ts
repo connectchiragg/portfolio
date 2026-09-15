@@ -20,4 +20,14 @@ export const projects: Project[] = [
     screenshot: '/projects/aether.png',
     year: '2026',
   },
+  {
+    index: '02',
+    title: 'Framer',
+    tagline: 'Find the moment in your videos',
+    desc: 'A video library you can search in plain language. AI-generated tags and summaries connect each result to a supporting frame, so you can jump straight to the moment.',
+    tags: ['Python', 'Video AI', 'PostgreSQL'],
+    href: 'https://framer.haciensus.com',
+    screenshot: '/projects/framer.png',
+    year: '2026',
+  },
 ]
