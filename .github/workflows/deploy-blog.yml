@@ -76,3 +76,41 @@ jobs:
             cat domain.json
             exit 1
           fi
+
+      - name: Verify custom domain and live navigation
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          endpoint="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/haciensus-blogs/domains/blogs.haciensus.com"
+
+          for attempt in $(seq 1 36); do
+            curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              "${endpoint}" \
+              --output domain-status.json
+
+            domain_status=$(node -e "const r=require('./domain-status.json'); if(!r.success) process.exit(1); process.stdout.write(r.result.status)")
+            echo "Custom domain status: ${domain_status} (attempt ${attempt}/36)"
+
+            if [ "${domain_status}" = "active" ]; then
+              break
+            fi
+
+            if [ "${attempt}" = "36" ]; then
+              cat domain-status.json
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          curl --fail --silent --show-error \
+            --retry 12 \
+            --retry-all-errors \
+            --retry-delay 10 \
+            "https://blogs.haciensus.com/" \
+            --output live-index.html
+
+          grep --quiet "Nothing published. Yet." live-index.html
+          grep --quiet 'href="https://haciensus.com/"' live-index.html
