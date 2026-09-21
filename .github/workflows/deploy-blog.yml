@@ -112,5 +112,6 @@ jobs:
             "https://blogs.haciensus.com/" \
             --output live-index.html
 
-          grep --quiet "Nothing published. Yet." live-index.html
+          grep --quiet "Nothing published." live-index.html
+          grep --quiet "The first essay is still being researched and edited." live-index.html
           grep --quiet 'href="https://haciensus.com/"' live-index.html
