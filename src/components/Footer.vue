@@ -19,6 +19,8 @@ const year = new Date().getFullYear()
       <div
         class="flex items-center gap-6 font-mono text-[10px] uppercase tracking-[0.24em] text-ash"
       >
+        <a href="https://blogs.haciensus.com" class="hover:text-bone">Field notes</a>
+        <span class="opacity-30">·</span>
         <router-link to="/privacy" class="hover:text-bone">Privacy</router-link>
         <span class="opacity-30">·</span>
         <router-link to="/legal" class="hover:text-bone">Legal</router-link>

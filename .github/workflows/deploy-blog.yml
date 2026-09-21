@@ -1,0 +1,78 @@
+name: Deploy Field Notes to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "blog/**"
+      - ".github/workflows/deploy-blog.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Ensure Cloudflare Pages project exists
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          endpoint="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects"
+          status=$(curl --silent --show-error --output project.json --write-out "%{http_code}" \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            "${endpoint}/haciensus-blogs")
+
+          if [ "${status}" = "404" ]; then
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              --header "Content-Type: application/json" \
+              --data '{"name":"haciensus-blogs","production_branch":"main"}' \
+              "${endpoint}"
+          elif [ "${status}" = "200" ]; then
+            node -e "const r=require('./project.json'); if(!r.success) process.exit(1)"
+            echo "Pages project already exists."
+          else
+            cat project.json
+            exit 1
+          fi
+
+      - name: Deploy lightweight blog
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy blog/site --project-name haciensus-blogs --branch main
+
+      - name: Associate blogs.haciensus.com
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          endpoint="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/haciensus-blogs/domains"
+          status=$(curl --silent --show-error --output domain.json --write-out "%{http_code}" \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            "${endpoint}/blogs.haciensus.com")
+
+          if [ "${status}" = "404" ]; then
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              --header "Content-Type: application/json" \
+              --data '{"name":"blogs.haciensus.com"}' \
+              "${endpoint}"
+          elif [ "${status}" = "200" ]; then
+            node -e "const r=require('./domain.json'); if(!r.success) process.exit(1)"
+            echo "Custom domain already associated."
+          else
+            cat domain.json
+            exit 1
+          fi

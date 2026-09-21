@@ -8,6 +8,13 @@ defineProps<{ visible?: boolean }>()
   <header v-if="visible" class="fixed top-5 left-0 right-0 z-50 px-5">
     <div class="mx-auto flex max-w-6xl items-center justify-end gap-3">
       <a
+        href="https://blogs.haciensus.com"
+        class="inline-flex items-center gap-2 px-3 py-2.5 font-mono text-[11px] uppercase tracking-[0.22em] text-ash transition hover:text-bone"
+      >
+        Field notes
+        <span aria-hidden="true">↗</span>
+      </a>
+      <a
         href="#contact"
         class="group inline-flex items-center gap-3 border border-ember bg-char/70 px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.22em] text-ember backdrop-blur transition hover:bg-ember hover:text-char"
       >
