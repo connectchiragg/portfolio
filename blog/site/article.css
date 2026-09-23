@@ -34,4 +34,15 @@
 .industry-table tbody th { width: 23%; font-weight: 500; }
 .industry-table td { color: var(--ash); }
 @media(max-width: 540px) { .essay-header { padding-top: 3rem; } .essay { width: min(100% - 2rem, 58rem); } .prose { font-size: 1rem; } .decision-map { padding: 1rem; } }
+@media(max-width: 640px) {
+  .industry-table table { min-width: 0; }
+  .industry-table thead { display: none; }
+  .industry-table tbody, .industry-table tr, .industry-table td, .industry-table tbody th { display: block; width: 100%; }
+  .industry-table tr { border-top: 1px solid var(--carbon); padding: .7rem 0; }
+  .industry-table tbody th, .industry-table td { border: 0; padding: .4rem 1rem; }
+  .industry-table tbody th { color: var(--bone); font-size: 1rem; }
+  .industry-table td::before { display: block; font: .56rem/2 var(--mono); color: var(--ember-bright); text-transform: uppercase; letter-spacing: .05em; }
+  .industry-table td:nth-child(2)::before { content: "Plausible starting point"; }
+  .industry-table td:nth-child(3)::before { content: "Not a standalone authority for"; }
+}
 @media(prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
