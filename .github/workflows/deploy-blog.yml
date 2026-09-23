@@ -112,6 +112,9 @@ jobs:
             "https://blogs.haciensus.com/" \
             --output live-index.html
 
-          grep --quiet "Nothing published." live-index.html
-          grep --quiet "The first essay is still being researched and edited." live-index.html
+          grep --quiet 'href="/jev-and-smaller-ai-decisions/"' live-index.html
           grep --quiet 'href="https://haciensus.com/"' live-index.html
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 5 \
+            "https://blogs.haciensus.com/jev-and-smaller-ai-decisions/" --output live-article.html
+          grep --quiet 'Jev and the case for' live-article.html
+          grep --quiet 'I have not benchmarked Jev myself' live-article.html

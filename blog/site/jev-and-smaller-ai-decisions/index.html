@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0807" />
+  <title>Jev and the case for smaller AI decisions — Chirag Goel</title>
+  <meta name="description" content="Jev makes a useful architectural question unavoidable: which decisions need a large model, which need a narrow semantic judgment, and which belong in code?" />
+  <link rel="canonical" href="https://blogs.haciensus.com/jev-and-smaller-ai-decisions/" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Jev and the case for smaller AI decisions" />
+  <meta property="og:description" content="The opportunity is not a cheaper model for everything. It is a better boundary between judgment, reasoning, and code." />
+  <meta property="og:url" content="https://blogs.haciensus.com/jev-and-smaller-ai-decisions/" />
+  <meta property="og:image" content="https://haciensus.com/og.png" />
+  <meta property="article:published_time" content="2026-09-23" />
+  <meta property="article:author" content="Chirag Goel" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/article.css" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BlogPosting","headline":"Jev and the case for smaller AI decisions","description":"A production-engineering perspective on bounded AI decisions, evaluation, and ownership.","datePublished":"2026-09-23","dateModified":"2026-09-23","author":{"@type":"Person","name":"Chirag Goel","url":"https://haciensus.com/"},"mainEntityOfPage":"https://blogs.haciensus.com/jev-and-smaller-ai-decisions/","image":"https://haciensus.com/og.png"}
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Haciensus Field Notes home"><span class="signal" aria-hidden="true"></span><span>haciensus</span><span class="brand-divider">/</span><span class="brand-section">field notes</span></a>
+    <nav class="site-nav" aria-label="Primary navigation"><a href="/">All writing</a><a href="https://haciensus.com/">Portfolio ↗</a></nav>
+  </header>
+  <main id="content" class="essay">
+    <article>
+      <header class="essay-header">
+        <p class="eyebrow">FIELD NOTE 001 <span aria-hidden="true">/</span> APPLIED AI</p>
+        <h1>Jev and the case for <em>smaller AI decisions.</em></h1>
+        <p class="essay-deck">The opportunity is not a cheaper model for everything. It is a better boundary between judgment, reasoning, and code.</p>
+        <p class="byline"><a href="https://haciensus.com/">Chirag Goel</a><span>23 September 2026</span><span>9 min read</span></p>
+      </header>
+      <aside class="evidence-note"><strong>About this piece</strong> An analysis of published documentation, practitioner reports, and video transcripts. I have not benchmarked Jev myself. Reported results below belong to their authors; architectural examples are proposals, not claims about systems I have shipped.</aside>
+      <div class="prose">
+        <p>A customer writes: “I was charged twice. Can someone fix this?”</p>
+        <p>Before an agent replies, several different jobs are hiding inside that request. Identify the intent. Look up the payments. Check whether a duplicate exists. Decide what the policy allows. Explain the outcome.</p>
+        <p>It is tempting to give the whole thing to a capable model. It is also worth asking why detecting a refund request and authorizing a refund should use the same mechanism.</p>
+        <p>That is what interests me about Jev. Not the idea that every application needs another model, but the possibility that we have bundled too many different decisions into one expensive call.</p>
+
+        <h2 id="primitive">A useful primitive, not a replacement brain</h2>
+        <p><a href="https://typesafe.ai/">TypeSafe positions Jev</a> as a model for bounded decisions rather than open-ended text generation. Its interface supports choices, yes/no-style judgments, and rubric-based scores. That makes it a candidate for things such as routing a message or assessing whether a passage meets a specific criterion.</p>
+        <p>Classification is not new, and a general-purpose model can also return structured output. The interesting proposition is whether a reusable semantic decision component can meet the quality bar at a cost and latency that make more frequent use practical.</p>
+        <p>If that holds for your workload, the product opportunity is larger than a smaller inference bill. A check that previously ran overnight might fit into an interactive workflow. A queue that received one coarse label might support several useful signals. Those are possibilities to measure, not benefits to assume.</p>
+
+        <h2 id="boundary">A small answer can hide a hard problem</h2>
+        <p>“Does this customer ask for a refund?” and “Should we refund this customer?” can both return yes or no. They are not equivalent tasks.</p>
+        <p>The first is a judgment about a message. The second may depend on payment records, policy exceptions, previous refunds, and authorization. A closed answer set does not reduce that underlying difficulty. It only restricts how the answer is expressed.</p>
+        <p>This is the boundary I would draw in a support workflow:</p>
+        <figure class="decision-map">
+          <figcaption>ONE REQUEST. DIFFERENT KINDS OF WORK.</figcaption>
+          <ol>
+            <li><span class="step-num">01</span><div><strong>Understand the request</strong><p>Semantic judgment: classify intent and identify ambiguity.</p></div><span class="step-kind">MODEL CANDIDATE</span></li>
+            <li><span class="step-num">02</span><div><strong>Establish the facts</strong><p>Retrieve payment records. Verify access. Check for duplicates.</p></div><span class="step-kind">TOOLS + CODE</span></li>
+            <li><span class="step-num">03</span><div><strong>Apply policy</strong><p>Enforce explicit rules. Escalate unresolved exceptions.</p></div><span class="step-kind">CODE + REVIEW</span></li>
+            <li><span class="step-num">04</span><div><strong>Explain the outcome</strong><p>Generate a response grounded in the verified result.</p></div><span class="step-kind">GENERATIVE MODEL</span></li>
+          </ol>
+        </figure>
+        <p>Adding stages is not automatically better. More calls can mean more latency and more failure points. I would separate a decision only when it has a clear contract, a useful evaluation, and a measurable advantage over the simpler design.</p>
+
+        <h2 id="fit">Where it can help—and where I would stop</h2>
+        <p>The useful dividing line runs through tasks, not industries. A bank can have a low-risk document-routing problem and a high-risk lending decision. Calling both “finance AI” hides the distinction that matters.</p>
+        <p><strong>Good candidates for evaluation:</strong> classifying support intent, tagging documents, scoring a retrieved passage for relevance, suggesting a tool from a bounded list, or flagging an explicit condition for review. These share a pattern: supplied evidence, a focused question, and an answer the application can check or safely reverse.</p>
+        <p><strong>Not a complete solution:</strong> Jev does not retrieve missing facts, run the workflow, or supply authorization merely by returning a label. Nor is its decision interface a substitute for a generative model that writes an explanation or an open-ended plan.</p>
+        <p><a href="https://docs.typesafe.ai/model-jaggedness/jev-1.13">TypeSafe’s documented limitations for Jev 1.13</a> include unreliable counting, arithmetic and date comparisons, weaker multi-hop reasoning, distraction from irrelevant context, and susceptibility to adversarial input. Those are version-specific limitations, not a prediction about every future release. For now, exact calculations belong in code, and a model-based injection check should not be your security boundary.</p>
+        <div class="industry-table" role="region" aria-label="Industry use cases and boundaries" tabindex="0">
+          <table>
+            <caption>Industry fit: proposed uses to test, not validated deployments</caption>
+            <thead><tr><th scope="col">Industry</th><th scope="col">Plausible starting point</th><th scope="col">Not a standalone authority for</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Retail &amp; customer support</th><td>Tag return requests; route complaints.</td><td>Issuing refunds or deciding exceptions without verified records and policy controls.</td></tr>
+              <tr><th scope="row">Recruiting &amp; HR</th><td>Route candidate questions; identify explicitly stated skills for human review.</td><td>Rejecting applicants or inferring suitability without job-valid evidence and bias evaluation.</td></tr>
+              <tr><th scope="row">Financial services &amp; insurance</th><td>Classify correspondence or incoming document types.</td><td>Credit decisions, claim adjudication, financial arithmetic, or trade predictions.</td></tr>
+              <tr><th scope="row">Healthcare</th><td>Route clearly administrative messages, with a reviewed escalation path.</td><td>Diagnosis, treatment, or ruling out clinical urgency.</td></tr>
+              <tr><th scope="row">Legal &amp; compliance</th><td>Suggest clause categories; flag passages for review.</td><td>Determining enforceability or certifying compliance.</td></tr>
+              <tr><th scope="row">Voice AI &amp; contact centers</th><td>Classify intent from a transcript or suggest a handoff signal.</td><td>Replacing transcription, speech synthesis, turn detection, or judging a caller from text alone.</td></tr>
+              <tr><th scope="row">Industrial operations</th><td>Tag maintenance notes and route service requests.</td><td>Safety-critical machine control or hard real-time guarantees.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>These boundaries are my deployment judgment, not claims that entire sectors are impossible for Jev. Sensitive workloads also need a separate review of data handling, access controls, contractual requirements, and domain-specific validation. Good classification results do not establish any of those.</p>
+        <p>For an Indian voice product, I would specifically test code-switched transcripts, recognition errors, and incomplete turns. A clean English text benchmark cannot tell me whether an intent decision is reliable on a noisy Hinglish call.</p>
+
+        <h2 id="evidence">The failures are more useful than the demos</h2>
+        <p>Two early practitioner reports made this distinction concrete for me.</p>
+        <p>In <a href="https://sidbharath.com/blog/the-complete-guide-to-jev/">Sid Bharath’s editorial experiment</a>, removing a substantial caveats section barely affected a broad limitation check. A narrower title check responded much more clearly to a deliberately clickbait version. The lesson is not that Jev can or cannot evaluate writing. It is that the scope of the question and the evidence supplied matter enormously.</p>
+        <p>That suggests a practical test: change the fact a question is supposed to detect. Remove it, contradict it, or make it ambiguous. If the answer stays reassuringly positive, the evaluator may be measuring something other than what you intended.</p>
+        <p><a href="https://baaderagency.com/blog/jev-typesafe-ai-first-three-days">Jesse Ayala’s Baader write-up</a> exposed a different problem: existing reference labels were themselves questionable. It also described a shadow integration where expected notes were not being retrieved. Neither situation is solved by a faster inference endpoint. Agreement with unreliable labels is not accuracy, and a successful API response does not prove that the model received the necessary evidence.</p>
+        <p>There is encouraging deployment evidence too. <a href="https://www.linkedin.com/company/metaview-technologies/">Metaview reports rolling Jev into its agents</a> and reducing candidate searches from minutes to seconds. That moves the discussion beyond toy demos. It remains a company-reported result, without a public evaluation protocol that lets us establish how much transfers to another workload.</p>
+
+        <h2 id="ownership">Cheap inference moves work; it does not remove it</h2>
+        <p>The difficult part of a decision system is often agreeing on what a good decision means.</p>
+        <p>What counts as urgent? Does urgency mean customer frustration, financial exposure, or an outage affecting many users? If those are different signals, collapsing them into one score makes the system harder to inspect and change.</p>
+        <p><a href="https://flaviocopes.com/jev/">Flavio Copes describes a useful pattern</a>: ask for separate judgments and combine them in application code. I like the separation of responsibilities. The model interprets uncertain language; the business owns the weights and consequences. Changing a priority policy should not require hiding another paragraph inside a prompt.</p>
+        <p>The same discipline applies to confidence. A concentrated answer distribution is not, by itself, proof of correctness on your traffic. Before using a score to authorize an action, check its relationship to observed errors on representative examples. An acceptable threshold for sorting a queue may be unacceptable for releasing money.</p>
+
+        <h2 id="adoption">How I would decide whether to use it</h2>
+        <p>I would start with one frequent, reversible decision—not a platform-wide migration.</p>
+        <ul>
+          <li><strong>Define the contract.</strong> Specify inputs, labels, exclusions, and what happens when the evidence is insufficient.</li>
+          <li><strong>Build a reviewed test set.</strong> Include ordinary traffic, ambiguous cases, missing evidence, and examples that challenge the rubric. Keep a held-out portion.</li>
+          <li><strong>Compare useful alternatives.</strong> Include the current system, a simple rule baseline, and an appropriately configured small model. A frontier model is not always the relevant competitor.</li>
+          <li><strong>Run in shadow mode.</strong> Log decisions without letting them act. Inspect disagreements and failure slices, not just an average score.</li>
+          <li><strong>Measure the whole path.</strong> Track tail latency, downstream corrections, review effort, timeouts, and business outcomes alongside inference spend.</li>
+        </ul>
+        <p>For customer-facing actions, I would keep authorization and irreversible operations behind explicit application controls. A model can recommend a route; that does not grant it permission to execute everything along it.</p>
+        <p>A cheaper call that creates more manual review may be a more expensive system. Conversely, a modest per-call improvement can matter a great deal when it removes waiting from a high-volume workflow. The unit of value is the completed task, including its corrections.</p>
+
+        <h2 id="takeaway">The architectural question is the durable one</h2>
+        <p>I am interested in Jev because it gives a concrete shape to an architectural choice: which parts of a workflow need semantic judgment, which need deeper reasoning, and which should never have left ordinary code?</p>
+        <p>The answer will differ across products. It may also change as models improve. The useful work is making those boundaries explicit enough that we can evaluate and replace each component without redesigning everything around it.</p>
+        <p class="closing-line">Use the simplest mechanism that meets the quality bar. Spend the reasoning budget where the reasoning is actually hard.</p>
+      </div>
+      <footer class="essay-end"><p class="eyebrow">RESEARCH NOTE</p><p>Sources reviewed in September 2026. Further perspectives: <a href="https://www.youtube.com/watch?v=F3YXg7AaKWE">Theo’s Jev discussion</a> and the <a href="https://sozai.app/transcript/jev-is-here-how-to-use/">Greg Isenberg / Ryan Vogel transcript</a>. Video material was reviewed through available transcripts, not independently reproduced experiments.</p><p>Written with AI-assisted research and editing. No claim of hands-on Jev testing.</p><a class="essay-back" href="/">← All field notes</a></footer>
+    </article>
+  </main>
+  <footer class="site-footer"><p>© 2026 Chirag Goel</p><div><a href="https://haciensus.com/">Portfolio</a><span>·</span><a href="mailto:connect.chirag.g@gmail.com">Email</a></div><a class="back-top" href="#content" aria-label="Back to top">↑</a></footer>
+</body>
+</html>
