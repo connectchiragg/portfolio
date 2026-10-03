@@ -1,0 +1,36 @@
+name: One-time encrypted v2 credential relay
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Encrypt the existing Pages credential
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          MIGRATION_PUBLIC_KEY: |
+            -----BEGIN PUBLIC KEY-----
+            MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAwAWgM53Sin1r6ChHSz2O
+            bcvlRH7KBT1pjamHOq2OPfM7d4bzBPAzmvAyTferSYyrdsTdjQ+YBIlyg6oCQ1fp
+            m8JJIrnRryouMefwKuOMwT8itWUPdH3VkQ/l7KNpkpIjZmZRNOPLtHGyR9G4++ru
+            Zo9yTbqg3F0rUXduKdJScF5xd9bJ4aMhXXs8qOzwifdi44wPAwG+2+1d3cgEErMj
+            vx39bPl0qodJViYIWzXpCUarkVEoqZhoEtu7HAmMdzZ9f2UtQRceb/NKtCIrSGap
+            lshXFh0qUV68g/qEYe9Gzji2of4j9oM2tPyv3xbCUGm6b6pyeyC9HMIenB1aqV7q
+            jx6ZaKygfFvSfIyzuGxIQ2ZFxMcQZiasGXANNRxWtgh4lp0extax7kaGUoDkPdhi
+            2h+gcb9D7UtIDYWKnMm4dg9p1yPELFQgwQGhClHSPHUgycERsCGA2nyXjGJZGlDx
+            ZblwsEwmXZm2xL/3LZOlY6296oVm9gVAECRKnFI85NGhAgMBAAE=
+            -----END PUBLIC KEY-----
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Pages credential'; exit 1; }
+          test "${#CLOUDFLARE_API_TOKEN}" -le 300 || { echo 'Credential does not fit encrypted envelope'; exit 1; }
+          printf '%s' "$CLOUDFLARE_API_TOKEN" | openssl pkeyutl -encrypt -pubin -inkey <(printf '%s\n' "$MIGRATION_PUBLIC_KEY") -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256 -out cf-token.enc
+      - name: Store only the encrypted envelope
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: portfolio-v2-encrypted-pages-credential
+          path: cf-token.enc
+          retention-days: 1
+          if-no-files-found: error
